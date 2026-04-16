@@ -123,3 +123,34 @@ def read_hourly_consumption(path):
             consumption.append(parse_float(row[HOURLY_CONSUMPTION_COL]))
 
     return consumption
+
+def read_daily_generation_df(path):
+    """
+    Load the daily generation CSV file into a pandas DataFrame and normalize numeric formatting.
+    The cleaned DataFrame is returned for downstream analysis and plotting.
+
+    Args:
+        path: Path to the daily generation CSV file.
+
+    Returns:
+        A pandas DataFrame containing the daily generation data (including the `Date` column
+        and energy-category columns such as `"<category> [MWh] Calculated resolutions"`).
+
+    Notes:
+        - The cleaning step uses `df.replace(",", "", regex=True)` to remove commas globally.
+          This is appropriate for datasets where commas are used only as thousand separators.
+        - If you expect commas to appear as part of text fields, consider limiting the
+          replacement to numeric columns only.
+
+    Raises:
+        FileNotFoundError: If the file does not exist.
+        pandas.errors.ParserError: If the file cannot be parsed as a CSV with the given separator.
+    """
+    path = Path(path)
+    if not path.exists():
+        raise FileNotFoundError(f"Daily generation file not found: {path}")
+
+    df = pd.read_csv(path, sep=CSV_SEPARATOR)
+    # Remove commas from ALL string cells (safe enough for your dataset)
+    df = df.replace(",", "", regex=True)
+    return df
