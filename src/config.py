@@ -46,3 +46,39 @@ HOURLY_SERIES = [
 
 # Consumption line styling (hourly plot)
 CONSUMPTION_TRACE = {"name": "Consumption", "color": "red"}
+
+# ----------------------------
+# Energy categories (daily analysis + sunburst)
+# ----------------------------
+ENERGY_TYPES_RENEWABLE = [
+    "Biomass",
+    "Hydropower",
+    "Wind offshore",
+    "Wind onshore",
+    "Photovoltaics",
+    "Other renewable",
+]
+
+ENERGY_TYPES_CONVENTIONAL = [
+    "Nuclear",
+    "Lignite",
+    "Hard coal",
+    "Fossil gas",
+    "Hydro pumped storage",
+    "Other conventional",
+]
+
+SUNBURST_LABELS = ["Renewable", "Conventional"]
+SUNBURST_PARENTS = (["Renewable"] * len(ENERGY_TYPES_RENEWABLE)) + (
+    ["Conventional"] * len(ENERGY_TYPES_CONVENTIONAL)
+)
+
+# A flat list used in loops (same order as you used later)
+ALL_DAILY_CATEGORIES = ENERGY_TYPES_RENEWABLE + ENERGY_TYPES_CONVENTIONAL
+
+# ----------------------------
+# Column naming conventions (daily dataframe)
+# ----------------------------
+# Daily based CSV data columns look like: "Biomass [MWh] Calculated resolutions"
+MWH_SUFFIX = " [MWh] Calculated resolutions"
+DAILY_CONSUMPTION_COL = "Total (grid load) [MWh] Calculated resolutions"
