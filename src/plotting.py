@@ -1,9 +1,17 @@
 import math
 import plotly.graph_objs as go
+import plotly.express as px
+
+from plotly.subplots import make_subplots
 
 from config import (
     CONSUMPTION_TRACE,
     HOURLY_SERIES,
+    ALL_DAILY_CATEGORIES,
+    SUNBURST_LABELS,
+    SUNBURST_PARENTS,
+    ENERGY_TYPES_RENEWABLE,
+    MWH_SUFFIX,
     )
 
 from stats_utils import summarize
@@ -120,4 +128,83 @@ def plot_hourly_stacked_area(timestamps, generation_series, consumption = None):
         yaxis=dict(title="Electricity [MWh]"),
         legend=dict(title="Series"),
     )
+    return fig
+
+def plot_sunburst_grid(df_daily):
+    """
+    Build a grid of daily sunburst plots for renewable vs. conventional energy breakdown.
+    For each day (row) in the input dataframe, it creates a Plotly sunburst chart
+    with two top-level nodes ("Renewable", "Conventional") and leaf nodes for each configured
+    generation category. All daily sunburst charts are arranged in a subplot grid with an
+    automatically chosen number of rows/columns.
+
+    Args:
+        df_daily: Daily generation dataframe. Must contain a `Date` column and one column
+            per energy category following the naming convention
+            `"<category> [MWh] Calculated resolutions"` (see `ALL_DAILY_CATEGORIES`).
+
+    Returns:
+        A Plotly `go.Figure` containing a subplot grid of sunburst charts (one chart per day).
+
+    Notes:
+        - The layout uses up to 5 columns and computes rows as `ceil(period / cols)` to avoid
+          interactive input and keep the output deterministic.
+        - Category values are converted via `float(...)` per cell; ensure the dataframe has
+          already been cleaned of thousand separators (e.g., commas) if applicable.
+
+    Raises:
+        ValueError: If the dataframe is missing the `Date` column or contains no rows.
+        KeyError: If one or more expected category columns are missing from `df_daily`.
+        ValueError: If a required category value cannot be converted to float.
+    """
+    if "Date" not in df_daily.columns:
+        raise ValueError("df_daily must contain a 'Date' column")
+
+    period = len(df_daily["Date"])
+    if period == 0:
+        raise ValueError("df_daily has no rows")
+
+    # Choose a stable automatic layout (no interactive input)
+    cols = min(period, 5)
+    rows = math.ceil(period / cols)
+
+    fig = make_subplots(
+        rows=rows,
+        cols=cols,
+        subplot_titles=df_daily["Date"].astype(str).tolist(),
+        specs=[[{"type": "domain"}] * cols] * rows,
+    )
+
+    categories = ALL_DAILY_CATEGORIES
+    labels = SUNBURST_LABELS
+    parents = [""] * len(labels) + SUNBURST_PARENTS
+
+    for i in range(period):
+        # values array: [Total Renewable, Total Conventional] + per-category values
+        values = [0.0] * (len(labels) + len(categories))
+
+        for j, category in enumerate(categories):
+            col_name = f"{category}{MWH_SUFFIX}"
+            daily_val = float(df_daily.loc[i, col_name])
+            values[len(labels) + j] = daily_val
+
+            if category in ENERGY_TYPES_RENEWABLE:
+                values[0] += daily_val
+            else:
+                values[1] += daily_val
+
+        sunburst = px.sunburst(
+            names=labels + categories,
+            parents=parents,
+            values=values,
+            branchvalues="total",
+        )
+
+        fig.add_trace(
+            sunburst.data[0],
+            row=(i // cols) + 1,
+            col=(i % cols) + 1,
+        )
+
+    fig.update_layout(title="Daily Energy Generation Sunburst Chart")
     return fig
