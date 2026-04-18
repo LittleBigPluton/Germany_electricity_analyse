@@ -1,0 +1,200 @@
+import pandas as pd
+
+from config import (
+    ALL_DAILY_CATEGORIES,
+    MWH_SUFFIX,
+    ENERGY_TYPES_RENEWABLE,
+    RENEWABLE_SET,
+)
+
+def add_daily_totals(df_daily):
+    """
+    This function converts the per-category daily energy columns to numeric values and then
+    computes three new columns:
+      - `Total Renewable`: sum of all renewable categories
+      - `Total Conventional`: sum of all conventional categories
+      - `Total Production`: renewable + conventional
+
+    The function does not mutate the input dataframe; it returns a copied dataframe with
+    the additional columns.
+
+    Args:
+        df_daily: Daily generation dataframe that contains one column per energy category
+            using the naming convention `"<category> [MWh] Calculated resolutions"`.
+
+    Returns:
+        A new dataframe with the columns `Total Renewable`, `Total Conventional`
+        and `Total Production` appended.
+
+    Raises:
+        KeyError: If one or more expected category columns are missing from `df_daily`.
+    """
+    # Copy data frame to make sure no change in raw data
+    df_copy = df_daily.copy()
+
+    # Make sure daily category columns are numeric
+    for cat in ALL_DAILY_CATEGORIES:
+        col = f"{cat}{MWH_SUFFIX}"
+        df_copy[col] = pd.to_numeric(df_copy[col], errors="coerce")
+
+    # Extract column names from the data
+    renewable_cols = [f"{c}{MWH_SUFFIX}" for c in ENERGY_TYPES_RENEWABLE]
+    conventional_cols = [f"{c}{MWH_SUFFIX}" for c in ALL_DAILY_CATEGORIES if c not in RENEWABLE_SET]
+
+    # Store total production of energy by category
+    df_copy["Total Renewable"] = df_copy[renewable_cols].sum(axis=1, skipna=True)
+    df_copy["Total Conventional"] = df_copy[conventional_cols].sum(axis=1, skipna=True)
+    df_copy["Total Production"] = df_copy["Total Renewable"] + df_copy["Total Conventional"]
+
+    return df_copy
+
+
+def set_date_index(df_daily, date_col):
+    """
+    This function validates that `date_col` exists, converts it to datetime using
+    `pd.to_datetime` and then returns a new dataframe indexed by that datetime
+    column in ascending order. The input dataframe is not mutated.
+
+    Args:
+        df_daily: Input dataframe that contains a date column.
+        date_col: Name of the column to convert to datetime and use as the index.
+            Defaults to `"Date"`.
+
+    Returns:
+        A new dataframe where `date_col` has been converted to datetime and set
+        as the index (sorted increasingly).
+
+    Raises:
+        ValueError: If `date_col` is missing from `df_daily`.
+        ValueError: If one or more values in `date_col` cannot be parsed as datetime.
+    """
+    if date_col not in df_daily.columns:
+        raise ValueError(f"Expected '{date_col}' column in daily dataframe")
+
+    df = df_daily.copy()
+    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+    if df[date_col].isna().any():
+        bad = int(df[date_col].isna().sum())
+        raise ValueError(f"Failed to parse {bad} date values in '{date_col}'")
+
+    return df.set_index(date_col).sort_index()
+
+def add_daily_consumption_from_hourly(
+    df_daily_indexed,
+    df_hourly_consumption,
+    hourly_date_col,
+    hourly_value_col):
+    """
+    This function takes a daily dataframe indexed by date (DatetimeIndex) and an hourly
+    consumption dataframe. It converts the hourly datetime column to pandas datetime,
+    sets it as the index, resamples the hourly consumption values to daily sums and
+    aligns (reindexes) the resulting daily series to the daily dataframe index.
+
+    Args:
+        df_daily_indexed: Daily dataframe indexed by date (DatetimeIndex). The output
+            will preserve this index and add a new column.
+        df_hourly_consumption: Hourly consumption dataframe containing a datetime column
+            (`hourly_date_col`) and a numeric consumption column (`hourly_value_col`).
+        hourly_date_col: Name of the datetime column in `df_hourly_consumption`.
+            Defaults to `"Date"`.
+        hourly_value_col: Name of the consumption value column in `df_hourly_consumption`.
+            Defaults to `DAILY_CONSUMPTION_COL`.
+
+    Returns:
+        A new daily dataframe with an additional column:
+          - `Total Consumption`: daily summed consumption aligned to the daily index.
+
+    Raises:
+        ValueError: If `df_daily_indexed` is not indexed by `pd.DatetimeIndex`.
+    """
+    if not isinstance(df_daily_indexed.index, pd.DatetimeIndex):
+        raise ValueError("df_daily_indexed must be indexed by Date (DatetimeIndex)")
+
+    df = df_daily_indexed.copy()
+
+    hourly = df_hourly_consumption.copy()
+    hourly[hourly_date_col] = pd.to_datetime(hourly[hourly_date_col], errors="coerce")
+    hourly = hourly.set_index(hourly_date_col).sort_index()
+
+    hourly[hourly_value_col] = pd.to_numeric(hourly[hourly_value_col], errors="coerce")
+
+    daily_sum = hourly[hourly_value_col].resample("D").sum(min_count=1)
+    df["Total Consumption"] = daily_sum.reindex(df.index)
+
+    return df
+
+def comparison_days(df, lhs, rhs):
+    """
+    The function compares `df[lhs]` and `df[rhs]` row-wise (after coercing both columns
+    to numeric) and returns a list of date strings for which `lhs > rhs` holds true.
+    The dataframe is expected to be indexed by a `DatetimeIndex` so that dates can be
+    extracted reliably.
+
+    Args:
+        df: Input dataframe indexed by datetime (pd.DatetimeIndex).
+        lhs: Name of the left-hand-side column to compare.
+        rhs: Name of the right-hand-side column to compare.
+
+    Returns:
+        A list of ISO-formatted date strings (e.g., `"2023-07-16"`) where
+        `df[lhs] > df[rhs]`.
+
+    Raises:
+        ValueError: If `df` does not have a `pd.DatetimeIndex`.
+        KeyError: If `lhs` or `rhs` is not present in `df`.
+    """
+    if not isinstance(df.index, pd.DatetimeIndex):
+        raise ValueError("Dataframe must have a DatetimeIndex for comparison_days()")
+
+    mask = pd.to_numeric(df[lhs], errors="coerce") > pd.to_numeric(df[rhs], errors="coerce")
+    days = df.index[mask].date
+    return [str(d) for d in days]
+
+def build_comparison_messages(df):
+    """
+    Build the 3 comparison messages according to comparison of days.
+
+    Args:
+        df: Daily dataframe indexed by datetime (pd.DatetimeIndex). Must contain the
+            columns `Total Production`, `Total Consumption`, `Total Renewable`,
+            and `Total Conventional`.
+
+    Returns:
+        A list of three strings, each describing whether the condition occurred and,
+        if so, on which dates.
+
+    Raises:
+        ValueError: If `df` is not indexed by `pd.DatetimeIndex` (raised by
+            `comparison_days()`).
+        KeyError: If one or more required columns are missing (raised by
+            `comparison_days()` when accessing columns).
+    """
+    msgs = []
+    exceeded_days = comparison_days(df, "Total Production", "Total Consumption")
+    count_exceeded_days = len(exceeded_days)
+    eco_days = comparison_days(df, "Total Renewable", "Total Conventional")
+    count_eco_days = len(eco_days)
+    green_days = comparison_days(df, "Total Renewable", "Total Consumption")
+    total_days = len(df)
+
+    msgs.append(
+        f"Germany generated more electricity than demand on {', '.join(exceeded_days)}. "
+        f"That is {count_exceeded_days} out of {total_days} days where generation exceeded demand."
+        if exceeded_days
+        else "Germany has not generated more electricity than demand on any day."
+    )
+
+    msgs.append(
+        f"Germany has generated more renewable electricity than demand on {', '.join(green_days)}"
+        f"Germany exceeded demanded energy on {count_eco_days} out of {total_days} by renewable energies only."
+        if green_days
+        else "Germany has not generated more renewable electricity than demand on any day."
+    )
+
+    msgs.append(
+        f"Germany has generated more renewable electricity than conventional ones on {', '.join(eco_days)}."
+        f"That is occurred on {count_eco_days} out of {total_days} days."
+        if eco_days
+        else "Germany has not generated more renewable electricity than conventional ones on any day."
+    )
+    return msgs
