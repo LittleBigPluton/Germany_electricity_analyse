@@ -82,3 +82,9 @@ ALL_DAILY_CATEGORIES = ENERGY_TYPES_RENEWABLE + ENERGY_TYPES_CONVENTIONAL
 # Daily based CSV data columns look like: "Biomass [MWh] Calculated resolutions"
 MWH_SUFFIX = " [MWh] Calculated resolutions"
 DAILY_CONSUMPTION_COL = "Total (grid load) [MWh] Calculated resolutions"
+
+# ----------------------------
+# Derived / convenience sets
+# ----------------------------
+# Helpful to decide energy type
+RENEWABLE_SET = set(ENERGY_TYPES_RENEWABLE)
