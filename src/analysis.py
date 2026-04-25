@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 from config import (
     ALL_DAILY_CATEGORIES,
@@ -198,3 +199,47 @@ def build_comparison_messages(df):
         else "Germany has not generated more renewable electricity than conventional ones on any day."
     )
     return msgs
+
+def compute_stats_table(df, category_columns, extra_columns=["Total Renewable", "Total Conventional", "Total Production", "Total Consumption"]):
+    """
+    This function produces a separate "stats table" rather than appending summary rows
+    (e.g., Average/Std Dev/Percentage) to the time-series dataframe. For each requested
+    column, it computes:
+      - `mean`: arithmetic mean
+      - `std`: sample standard deviation (ddof=1)
+      - `cv_percent`: coefficient of variation in percent, defined as (std / mean) * 100
+
+    Args:
+        df: Input dataframe containing numeric time-series columns.
+        category_columns: List of column names (typically per-energy-type daily columns)
+            to include in the stats table.
+        extra_columns: Additional aggregate columns to include (e.g., totals). Defaults
+            to `["Total Renewable", "Total Conventional", "Total Production", "Total Consumption"]`.
+
+    Returns:
+        A dataframe indexed by column name (one row per input column) with three statistic
+        columns: `mean`, `std`, and `cv_percent`.
+
+    Raises:
+        KeyError: If any requested column in `category_columns` or `extra_columns`
+          is not present in `df`.
+    """
+    cols = []
+    for c in category_columns:
+        cols.append(c)
+    cols.extend(extra_columns)
+
+    stats = {}
+    for col in cols:
+        s = pd.to_numeric(df[col], errors="coerce").dropna()
+        if len(s) == 0:
+            stats[col] = {"mean": np.nan, "std": np.nan, "cv_percent": np.nan}
+            continue
+        mean = float(s.mean())
+        std = float(s.std(ddof=1))
+        cv = float(std / mean * 100) if mean != 0 else np.nan
+        stats[col] = {"mean": mean, "std": std, "cv_percent": cv}
+
+    stats_df = pd.DataFrame(stats).T
+    # transpose to have rows = metrics if you prefer
+    return stats_df
