@@ -88,3 +88,6 @@ DAILY_CONSUMPTION_COL = "Total (grid load) [MWh] Calculated resolutions"
 # ----------------------------
 # Helpful to decide energy type
 RENEWABLE_SET = set(ENERGY_TYPES_RENEWABLE)
+
+# A flat list used in loops (same order as you used later)
+ALL_DAILY_CATEGORIES = ENERGY_TYPES_RENEWABLE + ENERGY_TYPES_CONVENTIONAL
