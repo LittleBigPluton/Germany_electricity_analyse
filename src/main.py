@@ -17,6 +17,8 @@ from config import (
     DAILY_GENERATION_FILE,
     CSV_SEPARATOR,
     DAILY_CONSUMPTION_COL,
+    ALL_DAILY_CATEGORIES,
+    MWH_SUFFIX,
 )
 
 from analysis import (
@@ -24,6 +26,7 @@ from analysis import (
     set_date_index,
     add_daily_consumption_from_hourly,
     build_comparison_messages,
+    compute_stats_table,
 )
 
 def main():
@@ -85,6 +88,22 @@ def main():
             for msg in build_comparison_messages(df_daily):
                 print(msg)
                 analysis_file.write(msg+"\n")
+
+    # ----------------------------
+    # 4) Stats table (separate, professional)
+    # ----------------------------
+    daily_category_cols =  [f"{c}{MWH_SUFFIX}" for c in ALL_DAILY_CATEGORIES]
+    stats_df = compute_stats_table(df_daily, category_columns=daily_category_cols)
+
+    # Example: print two key fluctuations like you did before
+    if "Total Production" in stats_df.index and "Total Consumption" in stats_df.index:
+        prod_std = stats_df.loc["Total Production", "std"]
+        prod_cv = stats_df.loc["Total Production", "cv_percent"]
+        cons_std = stats_df.loc["Total Consumption", "std"]
+        cons_cv = stats_df.loc["Total Consumption", "cv_percent"]
+
+        print(f"Fluctuation of Total Production: {prod_std:.5f} MWh (%{prod_cv:.2f})")
+        print(f"Fluctuation of Total Consumption: {cons_std:.5f} MWh (%{cons_cv:.2f})")
 
     return 0
 
