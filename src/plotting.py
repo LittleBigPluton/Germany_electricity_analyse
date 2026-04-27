@@ -1,4 +1,6 @@
 import math
+import pandas as pd
+import numpy as np
 import plotly.graph_objs as go
 import plotly.express as px
 
@@ -54,7 +56,7 @@ def _add_stacked_trace(fig, name, x, y, color, fill, stackgroup):
         line_color=color,
     )
 
-    # Only include these Plotly params if they are meaningful (cleaner than passing None)
+    # Check Plotly params
     if fill is not None:
         scatter_kwargs["fill"] = fill
         scatter_kwargs["fillcolor"] = color
@@ -207,4 +209,59 @@ def plot_sunburst_grid(df_daily):
         )
 
     fig.update_layout(title="Daily Energy Generation Sunburst Chart")
+    return fig
+
+def plot_error_bars_by_type(df_daily, categories, title, ext = MWH_SUFFIX):
+    """
+    Create a bar chart of daily means with sample-standard-deviation error bars.
+    For each category in `categories`, this function selects the corresponding column
+    from `df_daily`, converts it to numeric values, and computes:
+      - mean (bar height)
+      - sample standard deviation (error bar; ddof=1)
+
+    Args:
+        df_daily: Daily dataframe containing the numeric columns to summarize.
+        categories: List of category names. For each name, the target column is resolved
+            as `f"{name}{ext}"` (e.g., `"Biomass [MWh] Calculated resolutions"`).
+        title: Figure title shown at the top of the chart.
+        ext: Column suffix appended to each category name to form the dataframe column.
+            If `ext` is an empty string, the category name itself is used as the column
+            name. Defaults to `MWH_SUFFIX`.
+
+    Returns:
+        A Plotly `go.Figure` containing one bar per category with an error bar showing
+        the sample standard deviation.
+
+    Notes:
+        - Values are converted with `pd.to_numeric(..., errors="coerce")`; non-numeric
+          values become NaN and are dropped.
+        - Standard deviation is computed with `ddof=1` (sample std dev), matching
+          common statistical reporting conventions.
+        - If a column contains no valid numeric values, `np.mean`/`np.std` will yield
+          NaN; consider adding an explicit check if you want to skip empty categories.
+
+    Raises:
+        KeyError: If a resolved column name does not exist in `df_daily`.
+    """
+    fig = go.Figure()
+
+    for name in categories:
+        col = f"{name}{ext}" if ext else name
+        data = pd.to_numeric(df_daily[col], errors="coerce").dropna().values
+
+        fig.add_trace(
+            go.Bar(
+                x=[name],
+                y=[float(np.mean(data))],
+                name=name,
+                error_y=dict(type="data", array=[float(np.std(data, ddof=1))], visible=True),
+            )
+        )
+
+    fig.update_layout(
+        title=title,
+        xaxis_title="Type",
+        yaxis_title="Energy [MWh]",
+        barmode="group",
+    )
     return fig
