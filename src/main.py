@@ -9,6 +9,7 @@ from io_utils import (
 from plotting import (
     plot_hourly_stacked_area,
     plot_sunburst_grid,
+    plot_error_bars_by_type,
 )
 
 from config import (
@@ -63,8 +64,8 @@ def main():
     df_daily = add_daily_totals(df_daily_raw)
     df_daily = set_date_index(df_daily, date_col="Date")
 
-    # Load hourly consumption into a dataframe so we can resample to daily
-    # Your original hourly consumption file uses columns: Date, Start, End, Total (grid load)...
+    # Load hourly consumption into a dataframe so it can be resampled to daily
+    # The original hourly consumption file uses columns: Date, Start, End, Total (grid load)...
     # We'll read it via pandas here (simple + robust).
     df_hourly = pd.read_csv(HOURLY_CONSUMPTION_FILE, sep=CSV_SEPARATOR)
     df_hourly = df_hourly.replace(",", "", regex=True)
@@ -95,7 +96,7 @@ def main():
     daily_category_cols =  [f"{c}{MWH_SUFFIX}" for c in ALL_DAILY_CATEGORIES]
     stats_df = compute_stats_table(df_daily, category_columns=daily_category_cols)
 
-    # Example: print two key fluctuations like you did before
+    # Print two key fluctuations
     if "Total Production" in stats_df.index and "Total Consumption" in stats_df.index:
         prod_std = stats_df.loc["Total Production", "std"]
         prod_cv = stats_df.loc["Total Production", "cv_percent"]
@@ -105,6 +106,24 @@ def main():
         print(f"Fluctuation of Total Production: {prod_std:.5f} MWh (%{prod_cv:.2f})")
         print(f"Fluctuation of Total Consumption: {cons_std:.5f} MWh (%{cons_cv:.2f})")
 
+    # ----------------------------
+    # 5) Error bar plots
+    # ----------------------------
+    fig3 = plot_error_bars_by_type(
+        df_daily=df_daily,
+        categories=ALL_DAILY_CATEGORIES,
+        title="Daily Average Energy Generations with Fluctuations",
+        ext=MWH_SUFFIX,
+    )
+    fig3.show()
+
+    fig4 = plot_error_bars_by_type(
+        df_daily=df_daily,
+        categories=["Total Renewable", "Total Conventional", "Total Production", "Total Consumption"],
+        title="Daily Average Energy Stats with Fluctuations",
+        ext="",  # these columns are plain names
+    )
+    fig4.show()
     return 0
 
 if __name__ == "__main__":
