@@ -243,3 +243,29 @@ def compute_stats_table(df, category_columns, extra_columns=["Total Renewable", 
     stats_df = pd.DataFrame(stats).T
     # transpose to have rows = metrics if you prefer
     return stats_df
+
+def rank_stability(df, category_columns):
+    """
+    Rank columns by stability using sample standard deviation. Stability is defined
+    here as having a lower sample standard deviation (ddof=1) across the available
+    observations. Columns with fewer than two valid numeric values cannot produce a
+    sample standard deviation and are treated as having infinite variability, so they
+     appear at the end of the ranking.
+
+    Args:
+        df: Input dataframe containing the columns to be ranked.
+        category_columns: List of column names to evaluate and rank.
+
+    Returns:
+        A list of column names sorted by increasing sample standard deviation
+        (most stable first).
+
+    Raises:
+        KeyError: If any column in `category_columns` is missing from `df`.
+    """
+    stds = {}
+    for col in category_columns:
+        s = pd.to_numeric(df[col], errors="coerce").dropna()
+        stds[col] = float(s.std(ddof=1)) if len(s) > 1 else np.inf
+
+    return sorted(stds.keys(), key=lambda c: stds[c])
