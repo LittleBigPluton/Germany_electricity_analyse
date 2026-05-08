@@ -265,3 +265,49 @@ def plot_error_bars_by_type(df_daily, categories, title, ext = MWH_SUFFIX):
         barmode="group",
     )
     return fig
+
+def plot_trends(
+    df_daily: pd.DataFrame,
+    title: str = "Total Consumption & Production with Trend Lines",
+) -> go.Figure:
+    """
+    Plot Total Consumption and Total Production with linear trend lines.
+    Expects df_daily indexed by datetime (Date) and containing:
+      - 'Total Consumption'
+      - 'Total Production'
+    """
+    if not isinstance(df_daily.index, (pd.DatetimeIndex, pd.Index)):
+        raise ValueError("df_daily should be indexed by Date (DatetimeIndex preferred)")
+
+    df = df_daily.copy()
+
+    # Ensure numeric
+    df["Total Consumption"] = pd.to_numeric(df["Total Consumption"], errors="coerce")
+    df["Total Production"] = pd.to_numeric(df["Total Production"], errors="coerce")
+
+    # Create time axis for regression
+    t = np.arange(len(df), dtype=float)
+
+    # Consumption trend
+    cons = df["Total Consumption"].values.astype(float)
+    slope_c, intercept_c = np.polyfit(t, cons, 1)
+    cons_trend = intercept_c + slope_c * t
+
+    # Production trend
+    prod = df["Total Production"].values.astype(float)
+    slope_p, intercept_p = np.polyfit(t, prod, 1)
+    prod_trend = intercept_p + slope_p * t
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=df.index, y=df["Total Consumption"], mode="lines", name="Total Consumption"))
+    fig.add_trace(go.Scatter(x=df.index, y=cons_trend, mode="lines", name="Consumption Trend", line=dict(dash="dash")))
+    fig.add_trace(go.Scatter(x=df.index, y=df["Total Production"], mode="lines", name="Total Production"))
+    fig.add_trace(go.Scatter(x=df.index, y=prod_trend, mode="lines", name="Production Trend", line=dict(dash="dash")))
+
+    fig.update_layout(
+        title=title,
+        xaxis_title="Date",
+        yaxis_title="Energy [MWh]",
+        hovermode="x unified",
+    )
+    return fig
