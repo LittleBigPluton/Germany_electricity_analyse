@@ -16,7 +16,7 @@ class TrendResult:
     slope: float
     intercept: float
 
-def export_analysis(analysis_file_path,analysis, echo = True):
+def export_analysis(analysis_file_path,analysis, echo = True, mode = 'a'):
     """
     Export analysis to a text file and optionally echo them to stdout.
 
@@ -26,7 +26,7 @@ def export_analysis(analysis_file_path,analysis, echo = True):
         echo: If True, print each line after writing.
     """
 
-    with analysis_file_path.open("a", encoding="utf-8") as analysis_file:
+    with analysis_file_path.open(mode, encoding="utf-8") as analysis_file:
         for analyse in analysis:
             analysis_file.write(f"{analyse}\n")
             if echo:

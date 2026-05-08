@@ -85,7 +85,7 @@ def main():
     )
 
     # Print and save comparison analysis
-    export_analysis(analysis_file_path,build_comparison_messages(df_daily))
+    export_analysis(analysis_file_path,build_comparison_messages(df_daily), mode="w")
 
     # ----------------------------
     # 4) Stats table (separate, professional)
@@ -160,6 +160,6 @@ def main():
     fig5.show()
 
     return 0
-    
+
 if __name__ == "__main__":
     raise SystemExit(main())
