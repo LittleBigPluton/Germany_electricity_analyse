@@ -6,7 +6,32 @@ from config import (
     MWH_SUFFIX,
     ENERGY_TYPES_RENEWABLE,
     RENEWABLE_SET,
+    analysis_file_path,
 )
+
+from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class TrendResult:
+    slope: float
+    intercept: float
+
+def export_analysis(analysis_file_path,analysis, echo = True):
+    """
+    Export analysis to a text file and optionally echo them to stdout.
+
+    Args:
+        analysis_file_path: Path of the output text file.
+        analysis: Iterable of lines to write (newline will be added automatically).
+        echo: If True, print each line after writing.
+    """
+
+    with analysis_file_path.open("a", encoding="utf-8") as analysis_file:
+        for analyse in analysis:
+            analysis_file.write(f"{analyse}\n")
+            if echo:
+                print(analyse)
+
 
 def add_daily_totals(df_daily):
     """
@@ -269,3 +294,48 @@ def rank_stability(df, category_columns):
         stds[col] = float(s.std(ddof=1)) if len(s) > 1 else np.inf
 
     return sorted(stds.keys(), key=lambda c: stds[c])
+
+def linear_trend(series):
+    """
+    Fit a linear trend line to a time-ordered series.
+
+    The model is: y(t) = intercept + slope * t, where t is a simple integer index
+    from 0 to n-1. This is useful for estimating whether the series is increasing
+    or decreasing over time.
+
+    Args:
+        series: Input series of values ordered in time (or any consistent order).
+            Values are coerced to numeric.
+
+    Returns:
+        A `TrendResult` containing:
+          - `slope`: slope of the fitted line
+          - `intercept`: intercept of the fitted line
+
+    Raises:
+        TypeError: If `series` cannot be converted to numeric values suitable for fitting.
+        ValueError: If fewer than two data points are available for fitting.
+    """
+    y = pd.to_numeric(series, errors="coerce").values.astype(float)
+    t = np.arange(len(y), dtype=float)
+    slope, intercept = np.polyfit(t, y, 1)
+    return TrendResult(slope=float(slope), intercept=float(intercept))
+
+
+def describe_trend(name, slope):
+    """
+    Description of a trend based on the slope.
+
+    Args:
+        name: Name of the metric being described (e.g., "Total Consumption").
+        slope: Slope value from a fitted linear trend model.
+
+    Returns:
+        A sentence describing whether the metric has an increasing, decreasing,
+        or stable trend, including the slope formatted to two decimals.
+    """
+    if slope > 0:
+        return f"{name} has an increasing trend (slope={slope:.2f})."
+    if slope < 0:
+        return f"{name} has a decreasing trend (slope={slope:.2f})."
+    return f"{name} has a stable trend (slope={slope:.2f})."
