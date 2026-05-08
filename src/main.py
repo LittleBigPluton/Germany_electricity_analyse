@@ -10,6 +10,7 @@ from plotting import (
     plot_hourly_stacked_area,
     plot_sunburst_grid,
     plot_error_bars_by_type,
+    plot_trends,
 )
 
 from config import (
@@ -20,6 +21,7 @@ from config import (
     DAILY_CONSUMPTION_COL,
     ALL_DAILY_CATEGORIES,
     MWH_SUFFIX,
+    analysis_file_path,
 )
 
 from analysis import (
@@ -29,6 +31,9 @@ from analysis import (
     build_comparison_messages,
     compute_stats_table,
     rank_stability,
+    linear_trend,
+    describe_trend,
+    export_analysis,
 )
 
 def main():
@@ -80,16 +85,7 @@ def main():
     )
 
     # Print and save comparison analysis
-    try :
-        with open("analysis.txt","x") as analysis_file:
-            for msg in build_comparison_messages(df_daily):
-                print(msg)
-                analysis_file.write(msg+"\n")
-    except:
-        with open("analysis.txt","w") as analysis_file:
-            for msg in build_comparison_messages(df_daily):
-                print(msg)
-                analysis_file.write(msg+"\n")
+    export_analysis(analysis_file_path,build_comparison_messages(df_daily))
 
     # ----------------------------
     # 4) Stats table (separate, professional)
@@ -103,9 +99,10 @@ def main():
         prod_cv = stats_df.loc["Total Production", "cv_percent"]
         cons_std = stats_df.loc["Total Consumption", "std"]
         cons_cv = stats_df.loc["Total Consumption", "cv_percent"]
-
-        print(f"Fluctuation of Total Production: {prod_std:.5f} MWh (%{prod_cv:.2f})")
-        print(f"Fluctuation of Total Consumption: {cons_std:.5f} MWh (%{cons_cv:.2f})")
+        production_fluctuation = [f"Fluctuation of Total Production: {prod_std:.5f} MWh (%{prod_cv:.2f})"]
+        export_analysis(analysis_file_path,production_fluctuation)
+        consumption_fluctuation = [f"Fluctuation of Total Consumption: {cons_std:.5f} MWh (%{cons_cv:.2f})"]
+        export_analysis(analysis_file_path,consumption_fluctuation)
 
     # ----------------------------
     # 5) Error bar plots
@@ -144,15 +141,25 @@ def main():
                 + "."
             )
         # Print and save comparison analysis
-        try :
-            with open("analysis.txt","a") as analysis_file:
-                analysis_file.write(sentence+"\n")
-                print(sentence)
-        except:
-            with open("analysis.txt","w") as analysis_file:
-                analysis_file.write(sentence+"\n")
-                print(sentence)
+        export_analysis(analysis_file_path,[sentence])
+
+    # ----------------------------
+    # 7) Trend messages + trend plot
+    # ----------------------------
+    tr_cons = linear_trend(df_daily["Total Consumption"])
+    tr_prod = linear_trend(df_daily["Total Production"])
+    consumption_trend = describe_trend("Total Consumption", tr_cons.slope)
+    production_trend = describe_trend("Total Production", tr_prod.slope)
+
+    # Print and save trend messages
+    export_analysis(analysis_file_path,[consumption_trend])
+    export_analysis(analysis_file_path,[production_trend])
+
+    # Plot the trends
+    fig5 = plot_trends(df_daily)
+    fig5.show()
 
     return 0
+    
 if __name__ == "__main__":
     raise SystemExit(main())
