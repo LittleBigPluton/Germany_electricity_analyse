@@ -14,6 +14,11 @@ DAILY_GENERATION_FILE = script_dir.parent/"data/Actual_generation_202307160000_2
 CSV_SEPARATOR = ";"
 
 # ----------------------------
+# Output filename
+# ----------------------------
+analysis_file_path = script_dir.parent/"src/analysis.txt"
+
+# ----------------------------
 # Hourly CSV column indices (csv module reading)
 # ----------------------------
 # In hourly generation CSV Date is line[0], Start is line[1]
