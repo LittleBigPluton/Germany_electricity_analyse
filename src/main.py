@@ -28,6 +28,7 @@ from analysis import (
     add_daily_consumption_from_hourly,
     build_comparison_messages,
     compute_stats_table,
+    rank_stability,
 )
 
 def main():
@@ -124,7 +125,34 @@ def main():
         ext="",  # these columns are plain names
     )
     fig4.show()
-    return 0
 
+    # ----------------------------
+    # 6) Stability ranking
+    # ----------------------------
+    stability_sorted_cols = rank_stability(df_daily, daily_category_cols)
+    # Convert to clean names
+    cleaned_methods = [c.replace(MWH_SUFFIX, "") for c in stability_sorted_cols]
+    if cleaned_methods:
+        if len(cleaned_methods) == 1:
+            sentence = f"Stability of energy generation methods: {cleaned_methods[0]}."
+        else:
+            sentence = (
+                "Stability of energy generation methods in ascending order is: "
+                + ", ".join(cleaned_methods[:-1])
+                + " and "
+                + cleaned_methods[-1]
+                + "."
+            )
+        # Print and save comparison analysis
+        try :
+            with open("analysis.txt","a") as analysis_file:
+                analysis_file.write(sentence+"\n")
+                print(sentence)
+        except:
+            with open("analysis.txt","w") as analysis_file:
+                analysis_file.write(sentence+"\n")
+                print(sentence)
+
+    return 0
 if __name__ == "__main__":
     raise SystemExit(main())
