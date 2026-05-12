@@ -6,7 +6,6 @@ from config import (
     MWH_SUFFIX,
     ENERGY_TYPES_RENEWABLE,
     RENEWABLE_SET,
-    analysis_file_path,
 )
 
 from dataclasses import dataclass
@@ -15,23 +14,6 @@ from dataclasses import dataclass
 class TrendResult:
     slope: float
     intercept: float
-
-def export_analysis(analysis_file_path,analysis, echo = True, mode = 'a'):
-    """
-    Export analysis to a text file and optionally echo them to stdout.
-
-    Args:
-        analysis_file_path: Path of the output text file.
-        analysis: Iterable of lines to write (newline will be added automatically).
-        echo: If True, print each line after writing.
-    """
-
-    with analysis_file_path.open(mode, encoding="utf-8") as analysis_file:
-        for analyse in analysis:
-            analysis_file.write(f"{analyse}\n")
-            if echo:
-                print(analyse)
-
 
 def add_daily_totals(df_daily):
     """

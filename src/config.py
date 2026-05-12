@@ -16,7 +16,8 @@ CSV_SEPARATOR = ";"
 # ----------------------------
 # Output filename
 # ----------------------------
-analysis_file_path = script_dir.parent/"src/analysis.txt"
+analysis_file_dir = script_dir.parent/"docs/Analysis"
+figure_export_dir = script_dir.parent/"docs"
 
 # ----------------------------
 # Hourly CSV column indices (csv module reading)
