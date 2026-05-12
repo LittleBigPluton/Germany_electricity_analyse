@@ -21,7 +21,6 @@ from config import (
     DAILY_CONSUMPTION_COL,
     ALL_DAILY_CATEGORIES,
     MWH_SUFFIX,
-    analysis_file_path,
 )
 
 from analysis import (
@@ -33,9 +32,11 @@ from analysis import (
     rank_stability,
     linear_trend,
     describe_trend,
-    export_analysis,
 )
 
+from export_utils import(
+    export_analysis,
+)
 def main():
     # ----------------------------
     # 1) Hourly stacked area plot
@@ -47,7 +48,7 @@ def main():
         print(f"[ERROR] {e}")
         return 1
 
-    fig1 = plot_hourly_stacked_area(timestamps, generation_series, consumption=consumption)
+    fig1 = plot_hourly_stacked_area(timestamps, generation_series, consumption=consumption, save=True)
     fig1.show()
 
     # ----------------------------
@@ -60,7 +61,7 @@ def main():
         return 1
 
     # Sunburst expects Date column + category columns in the daily df
-    fig2 = plot_sunburst_grid(df_daily_raw)
+    fig2 = plot_sunburst_grid(df_daily_raw, save=True)
     fig2.show()
 
     # ----------------------------
@@ -85,7 +86,7 @@ def main():
     )
 
     # Print and save comparison analysis
-    export_analysis(analysis_file_path,build_comparison_messages(df_daily), mode="w")
+    export_analysis(build_comparison_messages(df_daily), mode="w")
 
     # ----------------------------
     # 4) Stats table (separate, professional)
@@ -100,9 +101,9 @@ def main():
         cons_std = stats_df.loc["Total Consumption", "std"]
         cons_cv = stats_df.loc["Total Consumption", "cv_percent"]
         production_fluctuation = [f"Fluctuation of Total Production: {prod_std:.5f} MWh (%{prod_cv:.2f})"]
-        export_analysis(analysis_file_path,production_fluctuation)
+        export_analysis(production_fluctuation)
         consumption_fluctuation = [f"Fluctuation of Total Consumption: {cons_std:.5f} MWh (%{cons_cv:.2f})"]
-        export_analysis(analysis_file_path,consumption_fluctuation)
+        export_analysis(consumption_fluctuation)
 
     # ----------------------------
     # 5) Error bar plots
@@ -112,6 +113,7 @@ def main():
         categories=ALL_DAILY_CATEGORIES,
         title="Daily Average Energy Generations with Fluctuations",
         ext=MWH_SUFFIX,
+        save=True,
     )
     fig3.show()
 
@@ -120,6 +122,7 @@ def main():
         categories=["Total Renewable", "Total Conventional", "Total Production", "Total Consumption"],
         title="Daily Average Energy Stats with Fluctuations",
         ext="",  # these columns are plain names
+        save=True,
     )
     fig4.show()
 
@@ -141,7 +144,7 @@ def main():
                 + "."
             )
         # Print and save comparison analysis
-        export_analysis(analysis_file_path,[sentence])
+        export_analysis([sentence])
 
     # ----------------------------
     # 7) Trend messages + trend plot
@@ -152,13 +155,12 @@ def main():
     production_trend = describe_trend("Total Production", tr_prod.slope)
 
     # Print and save trend messages
-    export_analysis(analysis_file_path,[consumption_trend])
-    export_analysis(analysis_file_path,[production_trend])
+    export_analysis([consumption_trend])
+    export_analysis([production_trend])
 
     # Plot the trends
-    fig5 = plot_trends(df_daily)
+    fig5 = plot_trends(df_daily,save=True)
     fig5.show()
-
     return 0
 
 if __name__ == "__main__":
