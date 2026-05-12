@@ -18,6 +18,10 @@ from config import (
 
 from stats_utils import summarize
 
+from export_utils import(
+    export_figure,
+)
+
 def _add_stacked_trace(fig, name, x, y, color, fill, stackgroup):
     """
     This adds a `go.Scatter` trace configured for line or stacked-area plotting.
@@ -66,7 +70,7 @@ def _add_stacked_trace(fig, name, x, y, color, fill, stackgroup):
     fig.add_trace(go.Scatter(**scatter_kwargs))
     return avg, sd
 
-def plot_hourly_stacked_area(timestamps, generation_series, consumption = None):
+def plot_hourly_stacked_area(timestamps, generation_series, consumption = None, save = False, fmt = 'html'):
     """
     Create an hourly stacked-area chart for generation series and a consumption line.
     The generation series are plotted as stacked filled areas according to the configuration
@@ -130,9 +134,13 @@ def plot_hourly_stacked_area(timestamps, generation_series, consumption = None):
         yaxis=dict(title="Electricity [MWh]"),
         legend=dict(title="Series"),
     )
+
+    # Export the hourly stacked figure if desired with given params
+    if save:
+        export_figure(fig,"Hourly_Stacked_Plot",fmt)
     return fig
 
-def plot_sunburst_grid(df_daily):
+def plot_sunburst_grid(df_daily, save = False, fmt = 'html'):
     """
     Build a grid of daily sunburst plots for renewable vs. conventional energy breakdown.
     For each day (row) in the input dataframe, it creates a Plotly sunburst chart
@@ -209,9 +217,14 @@ def plot_sunburst_grid(df_daily):
         )
 
     fig.update_layout(title="Daily Energy Generation Sunburst Chart")
+
+    # Export the sunbrust figure if desired with given params
+    if save:
+        export_figure(fig,"Daily_Generation_Sunbrust_Plot",fmt)
+
     return fig
 
-def plot_error_bars_by_type(df_daily, categories, title, ext = MWH_SUFFIX):
+def plot_error_bars_by_type(df_daily, categories, title, ext = MWH_SUFFIX, save = False, fmt = 'html'):
     """
     Create a bar chart of daily means with sample-standard-deviation error bars.
     For each category in `categories`, this function selects the corresponding column
@@ -264,12 +277,15 @@ def plot_error_bars_by_type(df_daily, categories, title, ext = MWH_SUFFIX):
         yaxis_title="Energy [MWh]",
         barmode="group",
     )
+
+    # Export the daily energy generation with fluctuations figure if desired with given params
+    if save:
+        export_figure_name = title.replace(" ","_")
+        export_figure(fig,export_figure_name,fmt)
+
     return fig
 
-def plot_trends(
-    df_daily: pd.DataFrame,
-    title: str = "Total Consumption & Production with Trend Lines",
-) -> go.Figure:
+def plot_trends(df_daily, title = "Total Consumption and Production with Trend Lines", save=False, fmt='html'):
     """
     Plot Total Consumption and Total Production with linear trend lines.
     Expects df_daily indexed by datetime (Date) and containing:
@@ -310,4 +326,10 @@ def plot_trends(
         yaxis_title="Energy [MWh]",
         hovermode="x unified",
     )
+
+    # Export the trend figure if desired with given params
+    if save:
+        export_figure_name = title.replace(" ","_")
+        export_figure(fig,export_figure_name,fmt)
+
     return fig
