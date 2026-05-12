@@ -1,0 +1,8 @@
+Germany generated more electricity than demand on 2023-07-16, 2023-07-23. That is 2 out of 10 days where generation exceeded demand.
+Germany has not generated more renewable electricity than demand on any day.
+Germany has generated more renewable electricity than conventional ones on 2023-07-16, 2023-07-17, 2023-07-18, 2023-07-20, 2023-07-22, 2023-07-23, 2023-07-24, 2023-07-25.That is occurred on 8 out of 10 days.
+Fluctuation of Total Production: 85200.95756 MWh (%7.97)
+Fluctuation of Total Consumption: 110366.11257 MWh (%9.41)
+Stability of energy generation methods in ascending order is: Other renewable, Nuclear, Biomass, Other conventional, Hydropower, Hydro pumped storage, Hard coal, Wind offshore, Lignite, Photovoltaics, Fossil gas and Wind onshore.
+Total Consumption has a decreasing trend (slope=-1742.67).
+Total Production has a decreasing trend (slope=-15286.43).
