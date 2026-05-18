@@ -32,6 +32,41 @@ def parse_float(value):
         return float("nan")
     return float(value.replace(",", ""))
 
+def normalize_data_headers(path):
+    df = pd.read_csv(path,sep=CSV_SEPARATOR)
+    df.columns = (
+        df.columns
+        .str.strip()
+        .str.replace("\ufeff", "", regex=False)
+    )
+
+    first_col = df.columns[0]
+
+    if first_col == "Date":
+        return path
+
+    if first_col == "Start date":
+        if "End date" not in df.columns:
+            raise ValueError("'End date' column not found.")
+
+        start_dt = pd.to_datetime(df["Start date"], errors="coerce")
+        end_dt = pd.to_datetime(df["End date"], errors="coerce")
+
+        if start_dt.isna().any() or end_dt.isna().any():
+            raise ValueError("Some Start date or End date values could not be parsed.")
+
+        df.insert(0, "Date", start_dt.dt.strftime("%b %-d, %Y"))
+        df.insert(1, "Start", start_dt.dt.strftime("%-I:%M %p"))
+        df.insert(2, "End", end_dt.dt.strftime("%-I:%M %p"))
+
+        df = df.drop(columns=["Start date", "End date"])
+        processed_dir = path.parents[1] / "processed"
+        processed_path = processed_dir / f"{path.stem}_processed.csv"
+        df.to_csv(processed_path, sep=CSV_SEPARATOR, index=False, encoding="utf-8")
+        return processed_path
+
+    raise ValueError(f"Unrecognised first column '{first_col}'. Expected 'Date' or 'Start date'.")
+
 def read_hourly_generation(path):
     """
     This function loads the hourly generation file using the standard `csv` module,
