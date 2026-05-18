@@ -14,6 +14,7 @@ from config import (
     SUNBURST_PARENTS,
     ENERGY_TYPES_RENEWABLE,
     MWH_SUFFIX,
+    grid_max_days,
     )
 
 from stats_utils import summarize
@@ -140,6 +141,70 @@ def plot_hourly_stacked_area(timestamps, generation_series, consumption = None, 
         export_figure(fig,"Hourly_Stacked_Plot",fmt)
     return fig
 
+def plot_sunburst_dropdown(df_daily):
+    """
+    Internal helper: one sunburst + dropdown to select day.
+    """
+    categories = ALL_DAILY_CATEGORIES
+    labels = SUNBURST_LABELS
+    parents = [""] * len(labels) + SUNBURST_PARENTS
+    dates = df_daily["Date"].astype(str).tolist()
+
+    # Precompute values for each day (fast switching, clean code)
+    all_values = []
+    for i in range(len(df_daily)):
+        values = [0.0] * (len(labels) + len(categories))
+        for j, category in enumerate(categories):
+            col_name = f"{category}{MWH_SUFFIX}"
+            daily_val = float(df_daily.loc[i, col_name])
+            values[len(labels) + j] = daily_val
+            values[0 if category in ENERGY_TYPES_RENEWABLE else 1] += daily_val
+        all_values.append(values)
+
+    # Start with day 0
+    fig = go.Figure(
+        data=[
+            go.Sunburst(
+                labels=labels + categories,
+                parents=parents,
+                values=all_values[0],
+                branchvalues="total",
+                # Optional: makes it less crowded
+                insidetextorientation="radial",
+            )
+        ]
+    )
+
+    # Dropdown buttons: update the trace values and the title
+    buttons = []
+    for i, day in enumerate(dates):
+        buttons.append(
+            dict(
+                label=day,
+                method="update",
+                args=[
+                    {"values": [all_values[i]]},  # one trace -> list of length 1
+                    {"title": f"Daily Energy Generation Sunburst — {day}"},
+                ],
+            )
+        )
+
+    fig.update_layout(
+        updatemenus=[
+            dict(
+                type="dropdown",
+                x=0.0,
+                y=1.15,
+                showactive=True,
+                buttons=buttons,
+            )
+        ],
+        margin=dict(t=80, l=10, r=10, b=10),
+        title=f"Daily Energy Generation Sunburst — {dates[0]}",
+    )
+
+    return fig
+
 def plot_sunburst_grid(df_daily, save = False, fmt = 'html'):
     """
     Build a grid of daily sunburst plots for renewable vs. conventional energy breakdown.
@@ -173,6 +238,14 @@ def plot_sunburst_grid(df_daily, save = False, fmt = 'html'):
     period = len(df_daily["Date"])
     if period == 0:
         raise ValueError("df_daily has no rows")
+
+    # Decide mode
+    if period > grid_max_days:
+        fig = plot_sunburst_dropdown(df_daily)
+        fig.update_layout(title="Daily Energy Generation Sunburst (Select Date)")
+        if save:
+            export_figure(fig, "Daily_Generation_Sunburst_Dropdown", fmt)
+        return fig
 
     # Choose a stable automatic layout (no interactive input)
     cols = min(period, 5)

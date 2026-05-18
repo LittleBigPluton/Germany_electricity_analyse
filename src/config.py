@@ -7,9 +7,14 @@ script_dir = Path(__file__).resolve().parent
 # ----------------------------
 # Input filenames
 # ----------------------------
-HOURLY_GENERATION_FILE = script_dir.parent/"data/Actual_generation_202307160000_202307252359_Hour.csv"
-HOURLY_CONSUMPTION_FILE = script_dir.parent/"data/Actual_consumption_202307160000_202307252359_Hour.csv"
-DAILY_GENERATION_FILE = script_dir.parent/"data/Actual_generation_202307160000_202307252359_Day.csv"
+
+HOURLY_GENERATION_FILE_RAW = script_dir.parent/"data/yearly/energy/2025/raw/Actual_generation_202501010000_202601020000_Hour.csv"
+HOURLY_CONSUMPTION_FILE_RAW = script_dir.parent/"data/yearly/energy/2025/raw/Actual_consumption_202501010000_202601020000_Hour.csv"
+DAILY_GENERATION_FILE_RAW = script_dir.parent/"data/yearly/energy/2025/raw/Actual_generation_202501010000_202601020000_Day.csv"
+
+HOURLY_GENERATION_FILE_PROC = ""
+HOURLY_CONSUMPTION_FILE_PROC = ""
+DAILY_GENERATION_FILE_PROC = ""
 
 CSV_SEPARATOR = ";"
 
@@ -78,6 +83,7 @@ SUNBURST_LABELS = ["Renewable", "Conventional"]
 SUNBURST_PARENTS = (["Renewable"] * len(ENERGY_TYPES_RENEWABLE)) + (
     ["Conventional"] * len(ENERGY_TYPES_CONVENTIONAL)
 )
+grid_max_days = 31
 
 # A flat list used in loops (same order as you used later)
 ALL_DAILY_CATEGORIES = ENERGY_TYPES_RENEWABLE + ENERGY_TYPES_CONVENTIONAL
@@ -87,7 +93,7 @@ ALL_DAILY_CATEGORIES = ENERGY_TYPES_RENEWABLE + ENERGY_TYPES_CONVENTIONAL
 # ----------------------------
 # Daily based CSV data columns look like: "Biomass [MWh] Calculated resolutions"
 MWH_SUFFIX = " [MWh] Calculated resolutions"
-DAILY_CONSUMPTION_COL = "Total (grid load) [MWh] Calculated resolutions"
+DAILY_CONSUMPTION_COL = "grid load [MWh] Calculated resolutions"
 
 # ----------------------------
 # Derived / convenience sets

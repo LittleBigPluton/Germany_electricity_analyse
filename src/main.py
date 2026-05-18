@@ -1,6 +1,7 @@
 import pandas as pd
 
 from io_utils import (
+    normalize_data_headers,
     read_hourly_generation,
     read_hourly_consumption,
     read_daily_generation_df,
@@ -14,9 +15,12 @@ from plotting import (
 )
 
 from config import (
-    HOURLY_CONSUMPTION_FILE,
-    HOURLY_GENERATION_FILE,
-    DAILY_GENERATION_FILE,
+    HOURLY_CONSUMPTION_FILE_RAW,
+    HOURLY_GENERATION_FILE_RAW,
+    DAILY_GENERATION_FILE_RAW,
+    HOURLY_CONSUMPTION_FILE_PROC,
+    HOURLY_GENERATION_FILE_PROC,
+    DAILY_GENERATION_FILE_PROC,
     CSV_SEPARATOR,
     DAILY_CONSUMPTION_COL,
     ALL_DAILY_CATEGORIES,
@@ -39,11 +43,18 @@ from export_utils import(
 )
 def main():
     # ----------------------------
+    # 0) Data processing
+    # ----------------------------
+    HOURLY_CONSUMPTION_FILE_PROC = normalize_data_headers(HOURLY_CONSUMPTION_FILE_RAW)
+    HOURLY_GENERATION_FILE_PROC = normalize_data_headers(HOURLY_GENERATION_FILE_RAW)
+    DAILY_GENERATION_FILE_PROC = normalize_data_headers(DAILY_GENERATION_FILE_RAW)
+
+    # ----------------------------
     # 1) Hourly stacked area plot
     # ----------------------------
     try:
-        timestamps, generation_series = read_hourly_generation(HOURLY_GENERATION_FILE)
-        consumption = read_hourly_consumption(HOURLY_CONSUMPTION_FILE)
+        timestamps, generation_series = read_hourly_generation(HOURLY_GENERATION_FILE_PROC)
+        consumption = read_hourly_consumption(HOURLY_CONSUMPTION_FILE_PROC)
     except (FileNotFoundError, ValueError) as e:
         print(f"[ERROR] {e}")
         return 1
@@ -55,7 +66,7 @@ def main():
     # 2) Daily sunburst plots
     # ----------------------------
     try:
-        df_daily_raw = read_daily_generation_df(DAILY_GENERATION_FILE)
+        df_daily_raw = read_daily_generation_df(DAILY_GENERATION_FILE_PROC)
     except FileNotFoundError as e:
         print(f"[ERROR] {e}")
         return 1
@@ -74,7 +85,7 @@ def main():
     # Load hourly consumption into a dataframe so it can be resampled to daily
     # The original hourly consumption file uses columns: Date, Start, End, Total (grid load)...
     # We'll read it via pandas here (simple + robust).
-    df_hourly = pd.read_csv(HOURLY_CONSUMPTION_FILE, sep=CSV_SEPARATOR)
+    df_hourly = pd.read_csv(HOURLY_CONSUMPTION_FILE_PROC, sep=CSV_SEPARATOR)
     df_hourly = df_hourly.replace(",", "", regex=True)
 
     # Add daily consumption by resampling hourly
