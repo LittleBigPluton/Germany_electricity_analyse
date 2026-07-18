@@ -3,14 +3,15 @@
 # ----------------------------
 from pathlib import Path
 script_dir = Path(__file__).resolve().parent
+ROOT_DIRECTORY = script_dir.parent.parent
 
 # ----------------------------
 # Input filenames
 # ----------------------------
 
-HOURLY_GENERATION_FILE_RAW = script_dir.parent/"data/yearly/energy/2025/raw/Actual_generation_202501010000_202601020000_Hour.csv"
-HOURLY_CONSUMPTION_FILE_RAW = script_dir.parent/"data/yearly/energy/2025/raw/Actual_consumption_202501010000_202601020000_Hour.csv"
-DAILY_GENERATION_FILE_RAW = script_dir.parent/"data/yearly/energy/2025/raw/Actual_generation_202501010000_202601020000_Day.csv"
+HOURLY_GENERATION_FILE_RAW = ROOT_DIRECTORY/"data/yearly/energy/2025/raw/Actual_generation_202501010000_202601020000_Hour.csv"
+HOURLY_CONSUMPTION_FILE_RAW = ROOT_DIRECTORY/"data/yearly/energy/2025/raw/Actual_consumption_202501010000_202601020000_Hour.csv"
+DAILY_GENERATION_FILE_RAW = ROOT_DIRECTORY/"data/yearly/energy/2025/raw/Actual_generation_202501010000_202601020000_Day.csv"
 
 HOURLY_GENERATION_FILE_PROC = ""
 HOURLY_CONSUMPTION_FILE_PROC = ""
@@ -21,8 +22,11 @@ CSV_SEPARATOR = ";"
 # ----------------------------
 # Output filename
 # ----------------------------
-analysis_file_dir = script_dir.parent/"docs/Analysis"
-figure_export_dir = script_dir.parent/"docs"
+analysis_file_dir = ROOT_DIRECTORY/"docs/Analysis"
+analysis_file_dir.mkdir(parents=True,exist_ok=True)
+
+figure_export_dir = ROOT_DIRECTORY/"docs"
+figure_export_dir.mkdir(parents=True,exist_ok=True)
 
 # ----------------------------
 # Hourly CSV column indices (csv module reading)

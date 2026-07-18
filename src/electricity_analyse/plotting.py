@@ -6,7 +6,7 @@ import plotly.express as px
 
 from plotly.subplots import make_subplots
 
-from config import (
+from .config import (
     CONSUMPTION_TRACE,
     HOURLY_SERIES,
     ALL_DAILY_CATEGORIES,
@@ -17,9 +17,9 @@ from config import (
     grid_max_days,
     )
 
-from stats_utils import summarize
+from .stats_utils import summarize
 
-from export_utils import(
+from .export_utils import(
     export_figure,
 )
 

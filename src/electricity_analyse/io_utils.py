@@ -3,7 +3,7 @@ import pandas as pd
 
 from pathlib import Path
 
-from config import (
+from .config import (
     CSV_SEPARATOR,
     HOURLY_DATE_COL,
     HOURLY_START_COL,
@@ -61,6 +61,7 @@ def normalize_data_headers(path):
 
         df = df.drop(columns=["Start date", "End date"])
         processed_dir = path.parents[1] / "processed"
+        processed_dir.mkdir(parents=True,exist_ok=True)
         processed_path = processed_dir / f"{path.stem}_processed.csv"
         df.to_csv(processed_path, sep=CSV_SEPARATOR, index=False, encoding="utf-8")
         return processed_path

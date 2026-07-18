@@ -3,7 +3,7 @@ import os
 
 from pathlib import Path
 
-from config import(
+from .config import(
     analysis_file_dir,
     figure_export_dir,
 )
@@ -52,7 +52,7 @@ def export_figure(figure, figure_name, fmt):
         - Image exports (`png`, `svg`, `pdf`, ...) typically require `kaleido`.
         - Plotly determines the output format primarily from the file extension.
     """
-    
+
     if not figure_name or not figure_name.strip():
         raise ValueError("figure_name must be a non-empty string")
 
