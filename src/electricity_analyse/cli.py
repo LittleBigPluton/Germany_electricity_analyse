@@ -1,4 +1,5 @@
 import pandas as pd
+import matplotlib.pyplot as plt
 
 from electricity_analyse.io_utils import (
     normalize_data_headers,
@@ -12,6 +13,7 @@ from electricity_analyse.plotting import (
     plot_sunburst_grid,
     plot_error_bars_by_type,
     plot_trends,
+    plot_renewable_share_drilldown,
 )
 
 from electricity_analyse.config import (
@@ -40,6 +42,7 @@ from electricity_analyse.analysis import (
 
 from electricity_analyse.export_utils import(
     export_analysis,
+    export_figure,
 )
 def main():
     # ----------------------------
@@ -59,8 +62,8 @@ def main():
         print(f"[ERROR] {e}")
         return 1
 
-    fig1 = plot_hourly_stacked_area(timestamps, generation_series, consumption=consumption, save=True)
-    fig1.show()
+    hourly_stacked_fig = plot_hourly_stacked_area(timestamps, generation_series, consumption=consumption, save=True)
+    hourly_stacked_fig.show()
 
     # ----------------------------
     # 2) Daily sunburst plots
@@ -72,8 +75,8 @@ def main():
         return 1
 
     # Sunburst expects Date column + category columns in the daily df
-    fig2 = plot_sunburst_grid(df_daily_raw, save=True)
-    fig2.show()
+    sunburst_fig = plot_sunburst_grid(df_daily_raw, save=True)
+    sunburst_fig.show()
 
     # ----------------------------
     # 3) Daily analysis: totals + consumption + comparisons
@@ -89,12 +92,11 @@ def main():
     df_hourly = df_hourly.replace(",", "", regex=True)
 
     # Add daily consumption by resampling hourly
-    df_daily = add_daily_consumption_from_hourly(
-        df_daily_indexed=df_daily,
-        df_hourly_consumption=df_hourly,
-        hourly_date_col="Date",
-        hourly_value_col=DAILY_CONSUMPTION_COL,
-    )
+    df_daily = add_daily_consumption_from_hourly(df_daily_indexed=df_daily,df_hourly_consumption=df_hourly,hourly_date_col="Date",hourly_value_col=DAILY_CONSUMPTION_COL)
+    df_daily["Renewable Share"] = (df_daily["Total Renewable"] / df_daily["Total Production"] * 100)
+    renewable_share_drilldown_fig = plot_renewable_share_drilldown(df_daily)
+    renewable_share_drilldown_fig.show()
+    export_figure(renewable_share_drilldown_fig,"Renewable_Share_Drilldown","html")
 
     # Print and save comparison analysis
     export_analysis(build_comparison_messages(df_daily), mode="w")
@@ -119,23 +121,23 @@ def main():
     # ----------------------------
     # 5) Error bar plots
     # ----------------------------
-    fig3 = plot_error_bars_by_type(
+    error_bars_generation_fig = plot_error_bars_by_type(
         df_daily=df_daily,
         categories=ALL_DAILY_CATEGORIES,
         title="Daily Average Energy Generations with Fluctuations",
         ext=MWH_SUFFIX,
         save=True,
     )
-    fig3.show()
+    error_bars_generation_fig.show()
 
-    fig4 = plot_error_bars_by_type(
+    error_bars_type_fig = plot_error_bars_by_type(
         df_daily=df_daily,
         categories=["Total Renewable", "Total Conventional", "Total Production", "Total Consumption"],
         title="Daily Average Energy Stats with Fluctuations",
         ext="",  # these columns are plain names
         save=True,
     )
-    fig4.show()
+    error_bars_type_fig.show()
 
     # ----------------------------
     # 6) Stability ranking
@@ -170,8 +172,8 @@ def main():
     export_analysis([production_trend])
 
     # Plot the trends
-    fig5 = plot_trends(df_daily,save=True)
-    fig5.show()
+    trends_fig = plot_trends(df_daily,save=True)
+    trends_fig.show()
     return 0
 
 if __name__ == "__main__":
