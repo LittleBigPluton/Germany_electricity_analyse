@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from config import (
+from .config import (
     ALL_DAILY_CATEGORIES,
     MWH_SUFFIX,
     ENERGY_TYPES_RENEWABLE,

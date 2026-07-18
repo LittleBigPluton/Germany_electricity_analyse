@@ -1,20 +1,20 @@
 import pandas as pd
 
-from io_utils import (
+from electricity_analyse.io_utils import (
     normalize_data_headers,
     read_hourly_generation,
     read_hourly_consumption,
     read_daily_generation_df,
     )
 
-from plotting import (
+from electricity_analyse.plotting import (
     plot_hourly_stacked_area,
     plot_sunburst_grid,
     plot_error_bars_by_type,
     plot_trends,
 )
 
-from config import (
+from electricity_analyse.config import (
     HOURLY_CONSUMPTION_FILE_RAW,
     HOURLY_GENERATION_FILE_RAW,
     DAILY_GENERATION_FILE_RAW,
@@ -27,7 +27,7 @@ from config import (
     MWH_SUFFIX,
 )
 
-from analysis import (
+from electricity_analyse.analysis import (
     add_daily_totals,
     set_date_index,
     add_daily_consumption_from_hourly,
@@ -38,7 +38,7 @@ from analysis import (
     describe_trend,
 )
 
-from export_utils import(
+from electricity_analyse.export_utils import(
     export_analysis,
 )
 def main():
