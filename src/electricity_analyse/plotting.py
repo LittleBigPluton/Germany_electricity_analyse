@@ -18,10 +18,7 @@ from .config import (
     )
 
 from .stats_utils import summarize
-
-from .export_utils import(
-    export_figure,
-)
+from .export_utils import export_figure
 
 def _add_stacked_trace(fig, name, x, y, color, fill, stackgroup):
     """
@@ -52,14 +49,7 @@ def _add_stacked_trace(fig, name, x, y, color, fill, stackgroup):
           two values (depending on `mean/stddev_sample` implementation).
     """
     avg, sd = summarize(y)
-
-    scatter_kwargs = dict(
-        name=f"{name}: <br>  Mean: {avg:.2f} MWh<br>  Std: {sd:.2f} MWh",
-        x=x,
-        y=y,
-        mode="lines",
-        line_color=color,
-    )
+    scatter_kwargs = dict(name=f"{name}: <br>  Mean: {avg:.2f} MWh<br>  Std: {sd:.2f} MWh",x=x,y=y,mode="lines",line_color=color)
 
     # Check Plotly params
     if fill is not None:
@@ -102,39 +92,13 @@ def plot_hourly_stacked_area(timestamps, generation_series, consumption = None, 
     for s in HOURLY_SERIES:
         name = s["name"]
         y = generation_series[name]
-        _add_stacked_trace(
-            fig=fig,
-            name=name,
-            x=timestamps,
-            y=y,
-            color=s["color"],
-            fill=s.get("fill"),
-            stackgroup=s.get("stackgroup"),
-        )
+        _add_stacked_trace(fig=fig,name=name,x=timestamps,y=y,color=s["color"],fill=s.get("fill"),stackgroup=s.get("stackgroup"))
 
     # Consumption as a line (no stackgroup, no fill)
     if consumption is not None:
-        fig.add_trace(
-            go.Scatter(
-                name=CONSUMPTION_TRACE["name"],
-                x=timestamps,
-                y=consumption,
-                mode="lines",
-                line_color=CONSUMPTION_TRACE["color"],
-            )
-        )
+        fig.add_trace(go.Scatter(name=CONSUMPTION_TRACE["name"],x=timestamps,y=consumption,mode="lines",line_color=CONSUMPTION_TRACE["color"]))
 
-    fig.update_layout(
-        hovermode="x unified",
-        plot_bgcolor="white",
-        xaxis=dict(
-            title="Time",
-            showgrid=False,
-            showdividers=False,
-        ),
-        yaxis=dict(title="Electricity [MWh]"),
-        legend=dict(title="Series"),
-    )
+    fig.update_layout(hovermode="x unified",plot_bgcolor="white",xaxis=dict(title="Time",showgrid=False,showdividers=False),yaxis=dict(title="Electricity [MWh]"),legend=dict(title="Series"))
 
     # Export the hourly stacked figure if desired with given params
     if save:
@@ -162,46 +126,14 @@ def plot_sunburst_dropdown(df_daily):
         all_values.append(values)
 
     # Start with day 0
-    fig = go.Figure(
-        data=[
-            go.Sunburst(
-                labels=labels + categories,
-                parents=parents,
-                values=all_values[0],
-                branchvalues="total",
-                # Optional: makes it less crowded
-                insidetextorientation="radial",
-            )
-        ]
-    )
+    fig = go.Figure(data=[go.Sunburst(labels=labels + categories,parents=parents,values=all_values[0],branchvalues="total",insidetextorientation="radial")])
 
     # Dropdown buttons: update the trace values and the title
     buttons = []
     for i, day in enumerate(dates):
-        buttons.append(
-            dict(
-                label=day,
-                method="update",
-                args=[
-                    {"values": [all_values[i]]},  # one trace -> list of length 1
-                    {"title": f"Daily Energy Generation Sunburst — {day}"},
-                ],
-            )
-        )
+        buttons.append(dict(label=day,method="update",args=[{"values": [all_values[i]]},{"title": f"Daily Energy Generation Sunburst — {day}"}]))
 
-    fig.update_layout(
-        updatemenus=[
-            dict(
-                type="dropdown",
-                x=0.0,
-                y=1.15,
-                showactive=True,
-                buttons=buttons,
-            )
-        ],
-        margin=dict(t=80, l=10, r=10, b=10),
-        title=f"Daily Energy Generation Sunburst — {dates[0]}",
-    )
+    fig.update_layout(updatemenus=[dict(type="dropdown",x=0.0,y=1.15,showactive=True,buttons=buttons)],margin=dict(t=80, l=10, r=10, b=10),title=f"Daily Energy Generation Sunburst — {dates[0]}")
 
     return fig
 
@@ -250,14 +182,7 @@ def plot_sunburst_grid(df_daily, save = False, fmt = 'html'):
     # Choose a stable automatic layout (no interactive input)
     cols = min(period, 5)
     rows = math.ceil(period / cols)
-
-    fig = make_subplots(
-        rows=rows,
-        cols=cols,
-        subplot_titles=df_daily["Date"].astype(str).tolist(),
-        specs=[[{"type": "domain"}] * cols] * rows,
-    )
-
+    fig = make_subplots(rows=rows,cols=cols,subplot_titles=df_daily["Date"].astype(str).tolist(),specs=[[{"type": "domain"}] * cols] * rows)
     categories = ALL_DAILY_CATEGORIES
     labels = SUNBURST_LABELS
     parents = [""] * len(labels) + SUNBURST_PARENTS
@@ -276,18 +201,8 @@ def plot_sunburst_grid(df_daily, save = False, fmt = 'html'):
             else:
                 values[1] += daily_val
 
-        sunburst = px.sunburst(
-            names=labels + categories,
-            parents=parents,
-            values=values,
-            branchvalues="total",
-        )
-
-        fig.add_trace(
-            sunburst.data[0],
-            row=(i // cols) + 1,
-            col=(i % cols) + 1,
-        )
+        sunburst = px.sunburst(names=labels + categories,parents=parents,values=values,branchvalues="total")
+        fig.add_trace(sunburst.data[0],row=(i // cols) + 1,col=(i % cols) + 1)
 
     fig.update_layout(title="Daily Energy Generation Sunburst Chart")
 
@@ -334,22 +249,9 @@ def plot_error_bars_by_type(df_daily, categories, title, ext = MWH_SUFFIX, save 
     for name in categories:
         col = f"{name}{ext}" if ext else name
         data = pd.to_numeric(df_daily[col], errors="coerce").dropna().values
+        fig.add_trace(go.Bar(x=[name],y=[float(np.mean(data))],name=name,error_y=dict(type="data", array=[float(np.std(data, ddof=1))], visible=True)))
 
-        fig.add_trace(
-            go.Bar(
-                x=[name],
-                y=[float(np.mean(data))],
-                name=name,
-                error_y=dict(type="data", array=[float(np.std(data, ddof=1))], visible=True),
-            )
-        )
-
-    fig.update_layout(
-        title=title,
-        xaxis_title="Type",
-        yaxis_title="Energy [MWh]",
-        barmode="group",
-    )
+    fig.update_layout(title=title,xaxis_title="Type",yaxis_title="Energy [MWh]",barmode="group")
 
     # Export the daily energy generation with fluctuations figure if desired with given params
     if save:
@@ -392,17 +294,60 @@ def plot_trends(df_daily, title = "Total Consumption and Production with Trend L
     fig.add_trace(go.Scatter(x=df.index, y=cons_trend, mode="lines", name="Consumption Trend", line=dict(dash="dash")))
     fig.add_trace(go.Scatter(x=df.index, y=df["Total Production"], mode="lines", name="Total Production"))
     fig.add_trace(go.Scatter(x=df.index, y=prod_trend, mode="lines", name="Production Trend", line=dict(dash="dash")))
-
-    fig.update_layout(
-        title=title,
-        xaxis_title="Date",
-        yaxis_title="Energy [MWh]",
-        hovermode="x unified",
-    )
+    fig.update_layout(title=title,xaxis_title="Date",yaxis_title="Energy [MWh]",hovermode="x unified",)
 
     # Export the trend figure if desired with given params
     if save:
         export_figure_name = title.replace(" ","_")
         export_figure(fig,export_figure_name,fmt)
+
+    return fig
+
+def plot_renewable_share_drilldown(df_daily, date_col = "Date", renewable_share_col = "Renewable Share"):
+    """
+    Create an interactive Plotly figure showing monthly renewable share
+    with a dropdown to inspect daily renewable share for each month.
+    """
+
+    df = df_daily.copy()
+
+    if date_col in df.columns:
+        df[date_col] = pd.to_datetime(df[date_col])
+        df = df.set_index(date_col)
+
+    df = df.sort_index()
+    df["Month"] = df.index.to_period("M").astype(str)
+    monthly = (df.groupby("Month")[renewable_share_col].mean().reset_index())
+
+    fig = go.Figure()
+
+    # Trace 0: monthly overview
+    fig.add_trace(go.Bar(x=monthly["Month"],y=monthly[renewable_share_col],name="Monthly average",
+                  visible=True,hovertemplate="Month: %{x}<br>Renewable share: %{y:.2f}%<extra></extra>"))
+
+    # Daily traces, one per month
+    months = monthly["Month"].tolist()
+
+    for month in months:
+
+        month_df = df[df["Month"] == month]
+        fig.add_trace(go.Bar(x=month_df.index.strftime("%Y-%m-%d"),y=month_df[renewable_share_col],
+                      name=f"Daily values: {month}",visible=False,hovertemplate="Date: %{x}<br>Renewable share: %{y:.2f}%<extra></extra>"))
+
+    buttons = []
+
+    # Button for monthly overview
+    buttons.append(dict(label="Monthly overview",method="update",args=[{"visible": [True] + [False] * len(months)},
+                        {"title": "Monthly Average Renewable Share","xaxis": {"title": "Month"},"yaxis": {"title": "Renewable Share (%)"}}]))
+
+    # Buttons for individual months
+    for i, month in enumerate(months):
+        visible = [False] * (len(months) + 1)
+        visible[i + 1] = True
+        buttons.append(dict(label=month,method="update",args=[{"visible": visible},
+                       {"title": f"Daily Renewable Share in {month}","xaxis": {"title": "Date"},"yaxis": {"title": "Renewable Share (%)"},}]))
+
+    fig.update_layout(title="Monthly Average Renewable Share",xaxis_title="Month",yaxis_title="Renewable Share (%)",template="plotly_white",
+                      updatemenus=[dict(buttons=buttons,direction="down",showactive=True,x=1.02,y=1.0,xanchor="left",yanchor="top",)],margin=dict(r=180))
 
     return fig
