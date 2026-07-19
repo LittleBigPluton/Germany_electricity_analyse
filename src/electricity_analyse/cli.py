@@ -38,11 +38,13 @@ from electricity_analyse.analysis import (
     rank_stability,
     linear_trend,
     describe_trend,
+    create_monthly_summary,
 )
 
 from electricity_analyse.export_utils import(
     export_analysis,
     export_figure,
+    export_csv,
 )
 def main():
     # ----------------------------
@@ -87,12 +89,13 @@ def main():
 
     # Load hourly consumption into a dataframe so it can be resampled to daily
     # The original hourly consumption file uses columns: Date, Start, End, Total (grid load)...
-    # We'll read it via pandas here (simple + robust).
+    # Read it via pandas here
     df_hourly = pd.read_csv(HOURLY_CONSUMPTION_FILE_PROC, sep=CSV_SEPARATOR)
     df_hourly = df_hourly.replace(",", "", regex=True)
 
     # Add daily consumption by resampling hourly
     df_daily = add_daily_consumption_from_hourly(df_daily_indexed=df_daily,df_hourly_consumption=df_hourly,hourly_date_col="Date",hourly_value_col=DAILY_CONSUMPTION_COL)
+
     # Calculate daily based renewavle share
     df_daily["Renewable Share"] = df_daily["Total Renewable"] / df_daily["Total Production"] * 100
     renewable_share_drilldown_fig = plot_drilldown(df_daily=df_daily,column_to_plot="Renewable Share",title="Renewable Share",yaxis_title="Renewable Share (%)",percentage=True)
@@ -104,11 +107,15 @@ def main():
     residual_load_drilldown_fig = plot_drilldown(df_daily=df_daily,column_to_plot="Residual Load",title="Residual Load",yaxis_title="Residual Load",percentage=False)
     residual_load_drilldown_fig.show()
     export_figure(residual_load_drilldown_fig, "Residual_Load_Drilldown","html")
+
     # Print and save comparison analysis
     export_analysis(build_comparison_messages(df_daily), mode="w")
 
+    # Calculate monthly summary
+    monthly_summary = create_monthly_summary(df_daily)
+    export_csv(monthly_summary,'Monthly_based_summary_stats.csv')
     # ----------------------------
-    # 4) Stats table (separate, professional)
+    # 4) Stats table
     # ----------------------------
     daily_category_cols =  [f"{c}{MWH_SUFFIX}" for c in ALL_DAILY_CATEGORIES]
     stats_df = compute_stats_table(df_daily, category_columns=daily_category_cols)

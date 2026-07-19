@@ -183,27 +183,35 @@ def build_comparison_messages(df):
     eco_days = comparison_days(df, "Total Renewable", "Total Conventional")
     count_eco_days = len(eco_days)
     green_days = comparison_days(df, "Total Renewable", "Total Consumption")
+    count_green_days = len(green_days)
     total_days = len(df)
 
     msgs.append(
-        f"Germany generated more electricity than demand on {', '.join(exceeded_days)}. "
-        f"That is {count_exceeded_days} out of {total_days} days where generation exceeded demand."
+        f"Germany generated more electricity than demand on {', '.join(exceeded_days)}.\n"
+        f"That is {count_exceeded_days} out of {total_days} days where generation exceeded demand.\n"
         if exceeded_days
-        else "Germany has not generated more electricity than demand on any day."
+        else "Germany has not generated more electricity than demand on any day.\n"
     )
 
     msgs.append(
-        f"Germany has generated more renewable electricity than demand on {', '.join(green_days)}"
-        f"Germany exceeded demanded energy on {count_eco_days} out of {total_days} by renewable energies only."
-        if green_days
-        else "Germany has not generated more renewable electricity than demand on any day."
-    )
-
-    msgs.append(
-        f"Germany has generated more renewable electricity than conventional ones on {', '.join(eco_days)}."
-        f"That is occurred on {count_eco_days} out of {total_days} days."
+        f"Germany has generated more renewable electricity than conventional ones on {', '.join(eco_days)}. \n"
+        f"That is {count_eco_days} days out of {total_days} days where generated more renewable energy than conventional ones.\n"
         if eco_days
-        else "Germany has not generated more renewable electricity than conventional ones on any day."
+        else "Germany has not generated more renewable electricity than demand on any day.\n"
+    )
+
+    msgs.append(
+        f"Germany has generated more renewable electricity than demand on {', '.join(green_days)}. \n"
+        f"Germany exceeded demanded energy on {count_green_days} out of {total_days} by renewable energies only.\n"
+        if green_days
+        else "Germany has not generated more renewable electricity than demand on any day.\n"
+    )
+
+    msgs.append(
+        f"Germany has generated more renewable electricity than conventional ones on {', '.join(eco_days)}.\n"
+        f"That is occurred on {count_eco_days} out of {total_days} days.\n"
+        if eco_days
+        else "Germany has not generated more renewable electricity than conventional ones on any day.\n"
     )
     return msgs
 
@@ -321,3 +329,22 @@ def describe_trend(name, slope):
     if slope < 0:
         return f"{name} has a decreasing trend (slope={slope:.2f})."
     return f"{name} has a stable trend (slope={slope:.2f})."
+
+
+def create_monthly_summary(df_daily,date_col = "Date"):
+    """
+    Create a monthly summary table from daily electricity data.
+    """
+
+    df = df_daily.copy()
+    if date_col in df.columns:
+        df[date_col] = pd.to_datetime(df[date_col])
+        df = df.set_index(date_col)
+
+    monthly_summary = df.resample("ME").agg({"Total Production": "sum","Total Consumption": "sum","Total Renewable": "sum","Total Conventional": "sum","Renewable Share":"sum","Residual Load": "sum"})
+    monthly_summary["Renewable Share"] = monthly_summary["Total Renewable"]/ monthly_summary["Total Production"]* 100
+    monthly_summary["Net Balance"] = monthly_summary["Total Production"] - monthly_summary["Total Consumption"]
+    monthly_summary = monthly_summary.reset_index()
+    monthly_summary["Month"] = monthly_summary[date_col].dt.to_period("M").astype(str)
+    monthly_summary = monthly_summary[["Month","Total Production","Total Consumption","Net Balance","Total Renewable","Total Conventional","Renewable Share","Residual Load",]]
+    return monthly_summary
