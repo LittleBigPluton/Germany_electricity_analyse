@@ -13,7 +13,7 @@ from electricity_analyse.plotting import (
     plot_sunburst_grid,
     plot_error_bars_by_type,
     plot_trends,
-    plot_renewable_share_drilldown,
+    plot_drilldown,
 )
 
 from electricity_analyse.config import (
@@ -93,11 +93,17 @@ def main():
 
     # Add daily consumption by resampling hourly
     df_daily = add_daily_consumption_from_hourly(df_daily_indexed=df_daily,df_hourly_consumption=df_hourly,hourly_date_col="Date",hourly_value_col=DAILY_CONSUMPTION_COL)
-    df_daily["Renewable Share"] = (df_daily["Total Renewable"] / df_daily["Total Production"] * 100)
-    renewable_share_drilldown_fig = plot_renewable_share_drilldown(df_daily)
+    # Calculate daily based renewavle share
+    df_daily["Renewable Share"] = df_daily["Total Renewable"] / df_daily["Total Production"] * 100
+    renewable_share_drilldown_fig = plot_drilldown(df_daily=df_daily,column_to_plot="Renewable Share",title="Renewable Share",yaxis_title="Renewable Share (%)",percentage=True)
     renewable_share_drilldown_fig.show()
     export_figure(renewable_share_drilldown_fig,"Renewable_Share_Drilldown","html")
 
+    # Calculate daily based residual load
+    df_daily["Residual Load"] = df_daily["Total Consumption"] - df_daily["Total Renewable"]
+    residual_load_drilldown_fig = plot_drilldown(df_daily=df_daily,column_to_plot="Residual Load",title="Residual Load",yaxis_title="Residual Load",percentage=False)
+    residual_load_drilldown_fig.show()
+    export_figure(residual_load_drilldown_fig, "Residual_Load_Drilldown","html")
     # Print and save comparison analysis
     export_analysis(build_comparison_messages(df_daily), mode="w")
 

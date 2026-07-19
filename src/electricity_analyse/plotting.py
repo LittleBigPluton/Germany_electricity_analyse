@@ -303,10 +303,10 @@ def plot_trends(df_daily, title = "Total Consumption and Production with Trend L
 
     return fig
 
-def plot_renewable_share_drilldown(df_daily, date_col = "Date", renewable_share_col = "Renewable Share"):
+def plot_drilldown(df_daily,column_to_plot,title,yaxis_title,date_col="Date",percentage=False,):
     """
-    Create an interactive Plotly figure showing monthly renewable share
-    with a dropdown to inspect daily renewable share for each month.
+    Create an interactive Plotly figure showing monthly averages
+    with a dropdown to inspect daily values for each month.
     """
 
     df = df_daily.copy()
@@ -317,37 +317,38 @@ def plot_renewable_share_drilldown(df_daily, date_col = "Date", renewable_share_
 
     df = df.sort_index()
     df["Month"] = df.index.to_period("M").astype(str)
-    monthly = (df.groupby("Month")[renewable_share_col].mean().reset_index())
-
+    monthly = (df.groupby("Month")[column_to_plot].mean().reset_index())
+    unit = "%" if percentage else ""
+    value_template = f"%{{y:.2f}}{unit}"
     fig = go.Figure()
 
-    # Trace 0: monthly overview
-    fig.add_trace(go.Bar(x=monthly["Month"],y=monthly[renewable_share_col],name="Monthly average",
-                  visible=True,hovertemplate="Month: %{x}<br>Renewable share: %{y:.2f}%<extra></extra>"))
+    # Monthly overview trace
+    fig.add_trace(go.Bar(x=monthly["Month"],y=monthly[column_to_plot],name="Monthly average",
+                  visible=True,hovertemplate=("Month: %{x}"f"<br>{column_to_plot}: {value_template}""<extra></extra>")))
 
-    # Daily traces, one per month
     months = monthly["Month"].tolist()
 
+    # Daily traces
     for month in months:
-
         month_df = df[df["Month"] == month]
-        fig.add_trace(go.Bar(x=month_df.index.strftime("%Y-%m-%d"),y=month_df[renewable_share_col],
-                      name=f"Daily values: {month}",visible=False,hovertemplate="Date: %{x}<br>Renewable share: %{y:.2f}%<extra></extra>"))
+        fig.add_trace(go.Bar(x=month_df.index.strftime("%Y-%m-%d"),y=month_df[column_to_plot],name=f"Daily values: {month}",
+                             visible=False,hovertemplate=("Date: %{x}"f"<br>{column_to_plot}: {value_template}""<extra></extra>"),))
 
     buttons = []
 
-    # Button for monthly overview
-    buttons.append(dict(label="Monthly overview",method="update",args=[{"visible": [True] + [False] * len(months)},
-                        {"title": "Monthly Average Renewable Share","xaxis": {"title": "Month"},"yaxis": {"title": "Renewable Share (%)"}}]))
+    # Monthly overview button
+    buttons.append(dict(label="Monthly overview",method="update",
+                   args=[{"visible": [True] + [False] * len(months)},{"title": f"Monthly Average {title}","xaxis": {"title": "Month"},"yaxis": {"title": yaxis_title}}]))
 
-    # Buttons for individual months
+    # Daily month buttons
     for i, month in enumerate(months):
         visible = [False] * (len(months) + 1)
         visible[i + 1] = True
-        buttons.append(dict(label=month,method="update",args=[{"visible": visible},
-                       {"title": f"Daily Renewable Share in {month}","xaxis": {"title": "Date"},"yaxis": {"title": "Renewable Share (%)"},}]))
 
-    fig.update_layout(title="Monthly Average Renewable Share",xaxis_title="Month",yaxis_title="Renewable Share (%)",template="plotly_white",
-                      updatemenus=[dict(buttons=buttons,direction="down",showactive=True,x=1.02,y=1.0,xanchor="left",yanchor="top",)],margin=dict(r=180))
+        buttons.append(dict(label=month,method="update",
+                       args=[{"visible": visible},{"title": f"Daily {title} in {month}","xaxis": {"title": "Date"},"yaxis": {"title": yaxis_title}}]))
+
+    fig.update_layout(title=f"Monthly Average {title}",xaxis_title="Month",yaxis_title=yaxis_title,template="plotly_white",
+                      updatemenus=[dict(buttons=buttons,direction="down",showactive=True,x=1.02,y=1.0,xanchor="left",yanchor="top")],margin=dict(r=180))
 
     return fig
