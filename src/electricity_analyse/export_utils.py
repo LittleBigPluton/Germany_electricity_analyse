@@ -1,4 +1,5 @@
 import plotly.express as px
+import pandas as pd
 import os
 
 from pathlib import Path
@@ -72,3 +73,10 @@ def export_figure(figure, figure_name, fmt):
     except Exception as e:
         print(f"[WARN] Export failed for {figure_name}.{fmt}: {e}")
         return False
+
+def export_csv(data,export_file_name):
+    """
+    Export given DataFrame as a csv file into analysis directory
+    """
+    data.to_csv(analysis_file_dir/export_file_name,index=False)
+    print(f"Data exported as {analysis_file_dir/export_file_name}")
