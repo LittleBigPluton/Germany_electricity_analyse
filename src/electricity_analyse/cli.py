@@ -39,6 +39,7 @@ from electricity_analyse.analysis import (
     linear_trend,
     describe_trend,
     create_monthly_summary,
+    get_top_days,
 )
 
 from electricity_analyse.export_utils import(
@@ -114,8 +115,22 @@ def main():
     # Calculate monthly summary
     monthly_summary = create_monthly_summary(df_daily)
     export_csv(monthly_summary,'Monthly_based_summary_stats.csv')
+
     # ----------------------------
-    # 4) Stats table
+    # 5) Get top ten days of some
+    # ----------------------------
+
+    renewable_share_top_ten_days = get_top_days(df_daily,column="Renewable Share",n=10)
+    export_csv(renewable_share_top_ten_days,"Top_Renewable_days.csv")
+    residual_load_top_ten_days = get_top_days(df_daily,column="Residual Load",n=10)
+    export_csv(residual_load_top_ten_days,"Top_Residual_Load_Days.csv")
+    production_top_ten_days = get_top_days(df_daily,column="Total Production",n=10)
+    export_csv(production_top_ten_days,"Top_Production_Days.csv")
+    consumption_top_ten_days = get_top_days(df_daily,column="Total Consumption",n=10)
+    export_csv(consumption_top_ten_days,"Top_Consumption_Days.csv")
+
+    # ----------------------------
+    # 5) Stats table
     # ----------------------------
     daily_category_cols =  [f"{c}{MWH_SUFFIX}" for c in ALL_DAILY_CATEGORIES]
     stats_df = compute_stats_table(df_daily, category_columns=daily_category_cols)
@@ -132,7 +147,7 @@ def main():
         export_analysis(consumption_fluctuation)
 
     # ----------------------------
-    # 5) Error bar plots
+    # 6) Error bar plots
     # ----------------------------
     error_bars_generation_fig = plot_error_bars_by_type(
         df_daily=df_daily,
@@ -153,7 +168,7 @@ def main():
     error_bars_type_fig.show()
 
     # ----------------------------
-    # 6) Stability ranking
+    # 7) Stability ranking
     # ----------------------------
     stability_sorted_cols = rank_stability(df_daily, daily_category_cols)
     # Convert to clean names
@@ -173,7 +188,7 @@ def main():
         export_analysis([sentence])
 
     # ----------------------------
-    # 7) Trend messages + trend plot
+    # 8) Trend messages + trend plot
     # ----------------------------
     tr_cons = linear_trend(df_daily["Total Consumption"])
     tr_prod = linear_trend(df_daily["Total Production"])

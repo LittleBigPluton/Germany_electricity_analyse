@@ -348,3 +348,17 @@ def create_monthly_summary(df_daily,date_col = "Date"):
     monthly_summary["Month"] = monthly_summary[date_col].dt.to_period("M").astype(str)
     monthly_summary = monthly_summary[["Month","Total Production","Total Consumption","Net Balance","Total Renewable","Total Conventional","Renewable Share","Residual Load",]]
     return monthly_summary
+
+def get_top_days(df, column, n, date_col="Date", ascending=False):
+    """
+    To get given number of top columns
+    """
+    df_top = df.copy()
+
+    if date_col in df_top.columns:
+        df_top[date_col] = pd.to_datetime(df_top[date_col])
+
+    elif df_top.index.name == date_col or pd.api.types.is_datetime64_any_dtype(df_top.index):
+        df_top = df_top.reset_index()
+
+    return (df_top.sort_values(column, ascending=ascending)[[date_col, column]].head(n).reset_index(drop=True))
