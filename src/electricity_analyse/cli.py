@@ -14,6 +14,7 @@ from electricity_analyse.plotting import (
     plot_error_bars_by_type,
     plot_trends,
     plot_drilldown,
+    plot_table,
 )
 
 from electricity_analyse.config import (
@@ -40,6 +41,7 @@ from electricity_analyse.analysis import (
     describe_trend,
     create_monthly_summary,
     get_top_days,
+    get_key_findings,
 )
 
 from electricity_analyse.export_utils import(
@@ -110,16 +112,18 @@ def main():
     export_figure(residual_load_drilldown_fig, "Residual_Load_Drilldown","html")
 
     # Print and save comparison analysis
-    export_analysis(build_comparison_messages(df_daily), mode="w")
+    export_analysis(build_comparison_messages(df_daily), "analysis.txt", mode="w")
 
     # Calculate monthly summary
     monthly_summary = create_monthly_summary(df_daily)
     export_csv(monthly_summary,'Monthly_based_summary_stats.csv')
+    monthly_summary_table_fig = plot_table(monthly_summary, title="Monthly Energy Summary 2025")
+    export_figure(monthly_summary_table_fig,"Monthly_Energy_Summary_Table","html")
+    monthly_summary_table_fig.show()
 
     # ----------------------------
-    # 5) Get top ten days of some
+    # 4) Get top ten days of selected features
     # ----------------------------
-
     renewable_share_top_ten_days = get_top_days(df_daily,column="Renewable Share",n=10)
     export_csv(renewable_share_top_ten_days,"Top_Renewable_days.csv")
     residual_load_top_ten_days = get_top_days(df_daily,column="Residual Load",n=10)
@@ -142,9 +146,13 @@ def main():
         cons_std = stats_df.loc["Total Consumption", "std"]
         cons_cv = stats_df.loc["Total Consumption", "cv_percent"]
         production_fluctuation = [f"Fluctuation of Total Production: {prod_std:.5f} MWh (%{prod_cv:.2f})"]
-        export_analysis(production_fluctuation)
+        export_analysis(production_fluctuation,"analysis.txt")
         consumption_fluctuation = [f"Fluctuation of Total Consumption: {cons_std:.5f} MWh (%{cons_cv:.2f})"]
-        export_analysis(consumption_fluctuation)
+        export_analysis(consumption_fluctuation,"analysis.txt")
+
+    # Get key findings and make a report
+    key_findings = get_key_findings(df_daily, monthly_summary)
+    export_analysis(key_findings, "key_findings_2025.txt", mode="w")
 
     # ----------------------------
     # 6) Error bar plots
@@ -185,7 +193,7 @@ def main():
                 + "."
             )
         # Print and save comparison analysis
-        export_analysis([sentence])
+        export_analysis([sentence],"analysis.txt")
 
     # ----------------------------
     # 8) Trend messages + trend plot
@@ -196,8 +204,8 @@ def main():
     production_trend = describe_trend("Total Production", tr_prod.slope)
 
     # Print and save trend messages
-    export_analysis([consumption_trend])
-    export_analysis([production_trend])
+    export_analysis([consumption_trend],"analysis.txt")
+    export_analysis([production_trend],"analysis.txt")
 
     # Plot the trends
     trends_fig = plot_trends(df_daily,save=True)
