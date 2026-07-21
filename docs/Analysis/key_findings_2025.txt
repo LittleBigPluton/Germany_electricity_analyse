@@ -1,0 +1,7 @@
+Highest daily renewable share occurred on 2025-10-26 : 86.76%.
+Lowest daily renewable share occurred on 2025-11-08 : 22.80%.
+Highest residual load occurred on 2025-12-03 : 1235679.67 MWh.
+Lowest residual load occurred on 2025-10-26 : -120730.08 MWh.
+The month with the highest renewable share was 2026-01 (78.61%).
+The month with the highest total consumption was 2025-01 (44170689.75 MWh).
+The month with the highest residual load was 2025-02 (23400302.23 MWh).

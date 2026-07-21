@@ -9,7 +9,7 @@ from .config import(
     figure_export_dir,
 )
 
-def export_analysis(analysis, echo = True, mode = 'a'):
+def export_analysis(analysis, export_file_name, echo = True, mode = 'a'):
     """
     Export analysis to a text file and optionally echo them to stdout.
 
@@ -18,7 +18,7 @@ def export_analysis(analysis, echo = True, mode = 'a'):
         echo: If True, print each line after writing.
     """
     analysis_file_dir.mkdir(parents=True, exist_ok=True)
-    analysis_file_path = analysis_file_dir/"analysis.txt"
+    analysis_file_path = analysis_file_dir/export_file_name
     with analysis_file_path.open(mode, encoding="utf-8") as analysis_file:
         for analyse in analysis:
             analysis_file.write(f"{analyse}\n")

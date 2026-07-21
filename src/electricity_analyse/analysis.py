@@ -334,8 +334,19 @@ def describe_trend(name, slope):
 def create_monthly_summary(df_daily,date_col = "Date"):
     """
     Create a monthly summary table from daily electricity data.
-    """
 
+    Args:
+        df_daily: Daily electricity dataframe containing production, consumption,
+            renewable, conventional, residual load, and net balance metrics.
+        date_col: Name of the date column used for monthly resampling.
+            Defaults to "Date".
+
+    Returns:
+        A dataframe containing monthly aggregated electricity metrics, including
+        total production, total consumption, total renewable generation,
+        total conventional generation, renewable share, residual load,
+        and net balance.
+    """
     df = df_daily.copy()
     if date_col in df.columns:
         df[date_col] = pd.to_datetime(df[date_col])
@@ -346,19 +357,71 @@ def create_monthly_summary(df_daily,date_col = "Date"):
     monthly_summary["Net Balance"] = monthly_summary["Total Production"] - monthly_summary["Total Consumption"]
     monthly_summary = monthly_summary.reset_index()
     monthly_summary["Month"] = monthly_summary[date_col].dt.to_period("M").astype(str)
-    monthly_summary = monthly_summary[["Month","Total Production","Total Consumption","Net Balance","Total Renewable","Total Conventional","Renewable Share","Residual Load",]]
+    monthly_summary = monthly_summary[["Month","Total Production","Total Consumption","Net Balance","Total Renewable","Total Conventional","Renewable Share","Residual Load"]]
+    monthly_summary = monthly_summary.rename(columns={"Total Production": "Total Production [MWh]","Total Consumption": "Total Consumption [MWh]","Net Balance": "Net Balance [MWh]",
+                                                      "Total Renewable": "Total Renewable [MWh]","Total Conventional": "Total Conventional [MWh]","Renewable Share": "Renewable Share [%]",
+                                                      "Residual Load": "Residual Load [MWh]"})
     return monthly_summary
 
 def get_top_days(df, column, n, date_col="Date", ascending=False):
     """
-    To get given number of top columns
+    Select the top rows for a given metric column.
+
+    Args:
+        df: Input dataframe containing daily electricity data.
+        column: Name of the metric column used for ranking
+            (e.g., "Renewable Share", "Residual Load", or "Total Consumption").
+        n: Number of top rows to return.
+        date_col: Name of the date column. Defaults to "Date".
+        ascending: Sorting direction. Defaults to False, which returns the
+            highest values first. Set to True to return the lowest values first.
+
+    Returns:
+        A dataframe containing the selected date column and metric column,
+        sorted by the requested metric.
     """
     df_top = df.copy()
 
     if date_col in df_top.columns:
         df_top[date_col] = pd.to_datetime(df_top[date_col])
-
     elif df_top.index.name == date_col or pd.api.types.is_datetime64_any_dtype(df_top.index):
         df_top = df_top.reset_index()
 
     return (df_top.sort_values(column, ascending=ascending)[[date_col, column]].head(n).reset_index(drop=True))
+
+def get_key_findings(df_daily, monthly_summary):
+    """
+    Build a concise text summary of the most important daily and monthly findings.
+
+    Args:
+        df_daily: Daily electricity dataframe containing calculated metrics such as
+            renewable share, residual load, total production, total consumption,
+            total renewable generation, and total conventional generation.
+        monthly_summary: Monthly summary dataframe containing aggregated monthly
+            values such as total production, total consumption, renewable share,
+            residual load, and net balance.
+
+    Returns:
+        A list of readable summary sentences describing important findings,
+        including highest and lowest renewable-share days, residual-load extremes,
+        and key monthly patterns.
+    """
+    findings = []
+    highest_renewable_day = df_daily["Renewable Share"].idxmax()
+    lowest_renewable_day = df_daily["Renewable Share"].idxmin()
+
+    highest_residual_day = df_daily["Residual Load"].idxmax()
+    lowest_residual_day = df_daily["Residual Load"].idxmin()
+
+    best_renewable_month = monthly_summary.loc[monthly_summary["Renewable Share [%]"].idxmax()]
+    highest_consumption_month = monthly_summary.loc[monthly_summary["Total Consumption [MWh]"].idxmax()]
+    highest_residual_month = monthly_summary.loc[monthly_summary["Residual Load [MWh]"].idxmax()]
+
+    findings.append(f"Highest daily renewable share occurred on {highest_renewable_day.date()} : {df_daily.loc[highest_renewable_day, 'Renewable Share']:.2f}%.")
+    findings.append(f"Lowest daily renewable share occurred on {lowest_renewable_day.date()} : {df_daily.loc[lowest_renewable_day, 'Renewable Share']:.2f}%.")
+    findings.append(f"Highest residual load occurred on {highest_residual_day.date()} : {df_daily.loc[highest_residual_day, 'Residual Load']:.2f} MWh.")
+    findings.append(f"Lowest residual load occurred on {lowest_residual_day.date()} : {df_daily.loc[lowest_residual_day, 'Residual Load']:.2f} MWh.")
+    findings.append(f"The month with the highest renewable share was {best_renewable_month['Month']} ({best_renewable_month['Renewable Share [%]']:.2f}%).")
+    findings.append(f"The month with the highest total consumption was {highest_consumption_month['Month']} ({highest_consumption_month['Total Consumption [MWh]']:.2f} MWh).")
+    findings.append(f"The month with the highest residual load was {highest_residual_month['Month']} ({highest_residual_month['Residual Load [MWh]']:.2f} MWh).")
+    return findings

@@ -352,3 +352,34 @@ def plot_drilldown(df_daily,column_to_plot,title,yaxis_title,date_col="Date",per
                       updatemenus=[dict(buttons=buttons,direction="down",showactive=True,x=1.02,y=1.0,xanchor="left",yanchor="top")],margin=dict(r=180))
 
     return fig
+
+def plot_table(df, title, max_rows = None, round_digits = 2,):
+    """
+    Create a Plotly table figure from a pandas dataframe.
+
+    Args:
+        df: Input dataframe to display as a table.
+        title: Title of the table figure.
+        max_rows: Maximum number of rows to display. Defaults to None,
+            which displays all rows.
+        round_digits: Number of decimal places used for numeric columns.
+            Defaults to 2.
+
+    Returns:
+        A Plotly figure containing the dataframe as a formatted table.
+    """
+    table_df = df.copy()
+
+    if max_rows is not None:
+        table_df = table_df.head(max_rows)
+
+    for col in table_df.columns:
+        if pd.api.types.is_numeric_dtype(table_df[col]):
+            table_df[col] = table_df[col].round(round_digits)
+
+    fig = go.Figure(data=[go.Table(header=dict(values=list(table_df.columns),align="left",font=dict(size=12)),
+                                   cells=dict(values=[table_df[col] for col in table_df.columns],align="left",font=dict(size=11),height=28))])
+
+    fig.update_layout(title=title,template="plotly_white",margin=dict(l=20, r=20, t=60, b=20))
+
+    return fig
