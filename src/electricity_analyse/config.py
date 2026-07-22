@@ -9,9 +9,9 @@ ROOT_DIRECTORY = script_dir.parent.parent
 # Input filenames
 # ----------------------------
 
-HOURLY_GENERATION_FILE_RAW = ROOT_DIRECTORY/"data/yearly/energy/2025/raw/Actual_generation_202501010000_202601020000_Hour.csv"
-HOURLY_CONSUMPTION_FILE_RAW = ROOT_DIRECTORY/"data/yearly/energy/2025/raw/Actual_consumption_202501010000_202601020000_Hour.csv"
-DAILY_GENERATION_FILE_RAW = ROOT_DIRECTORY/"data/yearly/energy/2025/raw/Actual_generation_202501010000_202601020000_Day.csv"
+HOURLY_GENERATION_FILE_RAW = ROOT_DIRECTORY/"data/yearly/energy/2025/raw/Actual_generation_202501010000_202601010000_Hour.csv"
+HOURLY_CONSUMPTION_FILE_RAW = ROOT_DIRECTORY/"data/yearly/energy/2025/raw/Actual_consumption_202501010000_202601010000_Hour.csv"
+DAILY_GENERATION_FILE_RAW = ROOT_DIRECTORY/"data/yearly/energy/2025/raw/Actual_generation_202501010000_202601010000_Day.csv"
 
 HOURLY_GENERATION_FILE_PROC = ""
 HOURLY_CONSUMPTION_FILE_PROC = ""
@@ -27,6 +27,18 @@ analysis_file_dir.mkdir(parents=True,exist_ok=True)
 
 figure_export_dir = ROOT_DIRECTORY/"docs"
 figure_export_dir.mkdir(parents=True,exist_ok=True)
+
+# ----------------------------
+# Specify expected time formats
+# ----------------------------
+DATE_FORMATS = [
+    "%b %d, %Y %I:%M %p",   # Jan 1, 2025 12:00 AM
+    "%b %d, %Y",             # Jan 1, 2025
+    "%Y-%m-%d %H:%M:%S",    # 2025-01-01 00:00:00
+    "%Y-%m-%d %H:%M",       # 2025-01-01 00:00
+    "%Y-%m-%d",             # 2025-01-01
+]
+
 
 # ----------------------------
 # Hourly CSV column indices (csv module reading)

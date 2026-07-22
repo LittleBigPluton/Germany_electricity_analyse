@@ -202,14 +202,14 @@ def build_comparison_messages(df):
 
     msgs.append(
         f"Germany has generated more renewable electricity than demand on {', '.join(green_days)}. \n"
-        f"Germany exceeded demanded energy on {count_green_days} out of {total_days} by renewable energies only.\n"
+        f"Renewable generation alone exceeded total consumption on {count_green_days} out of {total_days} days. \n"
         if green_days
         else "Germany has not generated more renewable electricity than demand on any day.\n"
     )
 
     msgs.append(
         f"Germany has generated more renewable electricity than conventional ones on {', '.join(eco_days)}.\n"
-        f"That is occurred on {count_eco_days} out of {total_days} days.\n"
+        f"This occurred on {count_eco_days} out of {total_days} days.\n"
         if eco_days
         else "Germany has not generated more renewable electricity than conventional ones on any day.\n"
     )
