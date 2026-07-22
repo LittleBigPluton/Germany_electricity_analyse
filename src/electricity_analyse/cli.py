@@ -99,7 +99,7 @@ def main():
     # Add daily consumption by resampling hourly
     df_daily = add_daily_consumption_from_hourly(df_daily_indexed=df_daily,df_hourly_consumption=df_hourly,hourly_date_col="Date",hourly_value_col=DAILY_CONSUMPTION_COL)
 
-    # Calculate daily based renewavle share
+    # Calculate daily based renewable share
     df_daily["Renewable Share"] = df_daily["Total Renewable"] / df_daily["Total Production"] * 100
     renewable_share_drilldown_fig = plot_drilldown(df_daily=df_daily,column_to_plot="Renewable Share",title="Renewable Share",yaxis_title="Renewable Share (%)",percentage=True)
     renewable_share_drilldown_fig.show()

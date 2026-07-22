@@ -5,6 +5,7 @@ from pathlib import Path
 
 from .config import (
     CSV_SEPARATOR,
+    DATE_FORMATS,
     HOURLY_DATE_COL,
     HOURLY_START_COL,
     HOURLY_CONSUMPTION_COL,
@@ -49,8 +50,13 @@ def normalize_data_headers(path):
         if "End date" not in df.columns:
             raise ValueError("'End date' column not found.")
 
-        start_dt = pd.to_datetime(df["Start date"], errors="coerce")
-        end_dt = pd.to_datetime(df["End date"], errors="coerce")
+        start_dt, end_dt = [],[]
+        for date_format in DATE_FORMATS:
+            start_dt = pd.to_datetime(df["Start date"], format=date_format, errors="coerce")
+            end_dt = pd.to_datetime(df["End date"], format=date_format, errors="coerce")
+
+            if not start_dt.isna().any() and not end_dt.isna().any():
+                break
 
         if start_dt.isna().any() or end_dt.isna().any():
             raise ValueError("Some Start date or End date values could not be parsed.")
@@ -60,6 +66,8 @@ def normalize_data_headers(path):
         df.insert(2, "End", end_dt.dt.strftime("%-I:%M %p"))
 
         df = df.drop(columns=["Start date", "End date"])
+        if "Nuclear [MWh] Calculated resolutions" in df.columns:
+            df["Nuclear [MWh] Calculated resolutions"] = df["Nuclear [MWh] Calculated resolutions"].replace("-",0)
         processed_dir = path.parents[1] / "processed"
         processed_dir.mkdir(parents=True,exist_ok=True)
         processed_path = processed_dir / f"{path.stem}_processed.csv"
@@ -115,7 +123,7 @@ def read_hourly_generation(path):
                 series[s["name"]].append(parse_float(row[s["hourly_col"]]))
 
     # Build a single proper x-axis
-    timestamps = pd.to_datetime([f"{d} {t}" for d, t in zip(date_parts, start_parts)], errors="coerce")
+    timestamps = pd.to_datetime([f"{d} {t}" for d, t in zip(date_parts, start_parts)], format=DATE_FORMATS[0], errors="coerce")
 
     # Validation for time stamps
     if timestamps.isna().any():
