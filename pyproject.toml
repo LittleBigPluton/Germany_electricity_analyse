@@ -30,6 +30,7 @@ dependencies = [
     "plotly>=5.18",
     "ipywidgets>=8.0",
     "statsmodels>=0.14",
+    "ipympl>=0.10.0"
 ]
 
 [project.optional-dependencies]
